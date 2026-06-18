@@ -5,7 +5,8 @@ export const AI_ASSISTANT_NAME = 'Hydra';
 export const BRAND_DOMAIN = 'travelwithydra.com';
 export const BRAND_URL = `https://${BRAND_DOMAIN}`;
 export const BRAND_EMAIL = 'info@travelwithydra.com';
-export const DEFAULT_LOGO_PATH = '/logo.png';
+export const DEFAULT_LOGO_PATH = '/logo-transparent.png';
+export const DEFAULT_LOGO_FALLBACK_PATH = '/logo.png';
 
 export const BRAND_TAGLINE =
   'Your intelligent travel companion — visa guidance, travel scores, and global mobility made simple.';

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getInitials } from '../../utils/userDisplay';
-import { BRAND_NAME, DEFAULT_LOGO_PATH } from '../../config/brand';
+import { BRAND_NAME } from '../../config/brand';
+import BrandLogo from '../brand/BrandLogo';
 
 interface HeaderProps {
   isLoggedIn: boolean;
@@ -53,8 +54,8 @@ const Header: React.FC<HeaderProps> = ({
     <header 
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
         isScrolled 
-          ? 'bg-white shadow-md' 
-          : 'bg-transparent'
+          ? 'bg-white dark:bg-gray-900 shadow-md dark:shadow-gray-950/50' 
+          : 'bg-white/90 dark:bg-gray-950/80 backdrop-blur-sm'
       }`}
     >
       <div className="container mx-auto px-4">
@@ -69,9 +70,9 @@ const Header: React.FC<HeaderProps> = ({
                 <img src={logoUrl} alt={BRAND_NAME} className="h-8 md:h-10 max-w-[180px] object-contain" />
               ) : (
                 <span className="flex items-center gap-2">
-                  <img src={DEFAULT_LOGO_PATH} alt="" className="h-9 w-9 md:h-10 md:w-10" aria-hidden="true" />
-                  <span className="text-xl md:text-2xl font-bold text-gray-900">
-                    travel<span className="text-primary-600">withydra</span>
+                  <BrandLogo size="sm" adaptToDarkMode />
+                  <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                    travel<span className="text-primary-600 dark:text-primary-400">withydra</span>
                   </span>
                 </span>
               )}
@@ -82,32 +83,32 @@ const Header: React.FC<HeaderProps> = ({
           <nav className="hidden md:flex items-center space-x-8">
             <button 
               onClick={onHomeClick}
-              className="text-gray-700 hover:text-primary-600 text-hover"
+              className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 text-hover"
             >
               Home
             </button>
             <button 
               onClick={onFeaturesClick}
-              className="text-gray-700 hover:text-primary-600 text-hover"
+              className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 text-hover"
             >
               Features
             </button>
             <button 
               onClick={onPricingClick}
-              className="text-gray-700 hover:text-primary-600 text-hover"
+              className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 text-hover"
             >
               Pricing
             </button>
             <button 
               onClick={onContactClick}
-              className="text-gray-700 hover:text-primary-600 text-hover"
+              className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 text-hover"
             >
               Contact
             </button>
             {isLoggedIn && (
               <button 
                 onClick={onDashboardClick}
-                className="text-gray-700 hover:text-primary-600 text-hover"
+                className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 text-hover"
               >
                 Dashboard
               </button>
@@ -119,7 +120,7 @@ const Header: React.FC<HeaderProps> = ({
             {isLoggedIn ? (
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <button className="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors">
+                  <button className="p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
@@ -127,14 +128,14 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
                 <button
                   onClick={onLogoutClick}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md text-sm font-medium transition-colors"
+                  className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 py-2 px-4 rounded-md text-sm font-medium transition-colors"
                 >
                   Log out
                 </button>
                 <div className="relative">
                   <button
                     onClick={onDashboardClick}
-                    className="flex items-center space-x-2 bg-white p-2 rounded-full border border-gray-300"
+                    className="flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded-full border border-gray-300 dark:border-gray-600"
                   >
                     <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                       {getInitials(userName)}
@@ -146,7 +147,7 @@ const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center space-x-4">
                 <button
                   onClick={onLoginClick}
-                  className="text-gray-700 hover:text-primary-600 font-medium text-hover"
+                  className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 font-medium text-hover"
                 >
                   Log in
                 </button>
@@ -164,7 +165,7 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex md:hidden">
             <button
               type="button"
-              className="text-gray-700 hover:bg-gray-100 p-2 rounded-md"
+              className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-md"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <span className="sr-only">Open menu</span>
@@ -190,7 +191,7 @@ const Header: React.FC<HeaderProps> = ({
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="md:hidden bg-white shadow-lg"
+            className="md:hidden bg-white dark:bg-gray-900 shadow-lg dark:shadow-black/20 border-t border-gray-100 dark:border-gray-800"
           >
             <div className="px-4 pt-2 pb-4 space-y-1">
               <button
@@ -198,7 +199,7 @@ const Header: React.FC<HeaderProps> = ({
                   onHomeClick();
                   setIsMenuOpen(false);
                 }}
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Home
               </button>
@@ -207,7 +208,7 @@ const Header: React.FC<HeaderProps> = ({
                   onFeaturesClick();
                   setIsMenuOpen(false);
                 }}
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Features
               </button>
@@ -216,7 +217,7 @@ const Header: React.FC<HeaderProps> = ({
                   onPricingClick();
                   setIsMenuOpen(false);
                 }}
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Pricing
               </button>
@@ -225,7 +226,7 @@ const Header: React.FC<HeaderProps> = ({
                   onContactClick();
                   setIsMenuOpen(false);
                 }}
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Contact
               </button>
@@ -236,7 +237,7 @@ const Header: React.FC<HeaderProps> = ({
                     onDashboardClick();
                     setIsMenuOpen(false);
                   }}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   Dashboard
                 </button>
@@ -249,7 +250,7 @@ const Header: React.FC<HeaderProps> = ({
                       onLogoutClick();
                       setIsMenuOpen(false);
                     }}
-                    className="block w-full px-3 py-2 bg-gray-100 text-primary-600 font-medium rounded-md hover:bg-gray-200"
+                    className="block w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 text-primary-600 dark:text-primary-400 font-medium rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
                   >
                     Log out
                   </button>
@@ -260,7 +261,7 @@ const Header: React.FC<HeaderProps> = ({
                         onLoginClick();
                         setIsMenuOpen(false);
                       }}
-                      className="block w-full px-3 py-2 text-center rounded-md text-gray-700 font-medium border border-gray-300 hover:bg-gray-50"
+                      className="block w-full px-3 py-2 text-center rounded-md text-gray-700 dark:text-gray-200 font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
                       Log in
                     </button>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import siteSettingsService from '../../lib/api/siteSettings';
+import BrandLogo from '../brand/BrandLogo';
 
 interface AdminSiteSettingsProps {
   onSaved?: () => void;
@@ -81,8 +82,8 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({ onSaved }) => {
           <img src={logoUrl.trim()} alt="Site logo preview" className="h-12 max-w-xs object-contain" />
         ) : (
           <span className="flex items-center gap-2">
-            <img src="/logo.png" alt="" className="h-10 w-10" aria-hidden="true" />
-            <span className="text-2xl font-bold text-gray-900">
+            <BrandLogo size="lg" adaptToDarkMode />
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">
               travel<span className="text-primary-600">withydra</span>
             </span>
           </span>

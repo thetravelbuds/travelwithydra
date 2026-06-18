@@ -9,7 +9,8 @@ import {
   getRemainingAiMessages,
   incrementAiDailyUsage,
 } from '../../config/aiAssistantAccess';
-import { AI_ASSISTANT_NAME, AI_WELCOME_MESSAGE, DEFAULT_LOGO_PATH } from '../../config/brand';
+import { AI_ASSISTANT_NAME, AI_WELCOME_MESSAGE } from '../../config/brand';
+import BrandLogo from '../brand/BrandLogo';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -362,11 +363,11 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50"
       >
         <button
           onClick={toggleChat}
-          className="w-14 h-14 bg-gray-900 hover:bg-gray-800 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-white"
+          className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-primary-500 to-primary-700 hover:from-primary-400 hover:to-primary-600 ring-2 ring-white/20 dark:ring-primary-300/30"
           aria-label={`Chat with ${AI_ASSISTANT_NAME}`}
         >
           {isOpen ? (
@@ -374,7 +375,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           ) : (
-            <img src={DEFAULT_LOGO_PATH} alt={AI_ASSISTANT_NAME} className="w-10 h-10 object-cover" />
+            <BrandLogo size="md" inverted className="ring-1 ring-white/30" />
           )}
         </button>
       </motion.div>
@@ -387,18 +388,18 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-24 right-6 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 flex flex-col"
+            className="fixed bottom-24 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-xl shadow-xl z-50 flex flex-col border border-gray-200 dark:border-gray-700"
             style={{ height: '600px', maxHeight: 'calc(100vh - 120px)' }}
           >
             {/* Header */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <img src={DEFAULT_LOGO_PATH} alt="" className="w-9 h-9 rounded-full" aria-hidden="true" />
+                <BrandLogo size="sm" inverted className="ring-1 ring-primary-400/40 bg-primary-600/20" />
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {AI_ASSISTANT_NAME}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     {aiLimits.hasAccess
                       ? Number.isFinite(remainingMessages)
                         ? `${remainingMessages} messages left today`

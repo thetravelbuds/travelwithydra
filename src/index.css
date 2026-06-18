@@ -8,10 +8,11 @@
   }
   
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100;
     font-family: 'Inter', 'Poppins', sans-serif;
     min-height: 100dvh;
     -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
   }
 
   #root {

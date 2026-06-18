@@ -9,7 +9,8 @@ import {
   getRemainingAiMessages,
   incrementAiDailyUsage,
 } from '../config/aiAssistantAccess';
-import { AI_ASSISTANT_NAME, AI_WELCOME_MESSAGE, DEFAULT_LOGO_PATH } from '../config/brand';
+import { AI_ASSISTANT_NAME, AI_WELCOME_MESSAGE } from '../config/brand';
+import BrandLogo from '../components/brand/BrandLogo';
 
 interface Message {
   id: string;
@@ -156,8 +157,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isLoggedIn, onLoginRequired }
           transition={{ duration: 0.5 }}
           className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden"
         >
-          <div className="bg-gray-900 px-6 py-4 flex items-center gap-3">
-            <img src={DEFAULT_LOGO_PATH} alt="" className="w-10 h-10 rounded-full" aria-hidden="true" />
+          <div className="bg-gray-900 dark:bg-gray-950 px-6 py-4 flex items-center gap-3">
+            <BrandLogo size="md" inverted className="ring-1 ring-primary-400/40" />
             <div>
               <h1 className="text-xl font-bold text-white">{AI_ASSISTANT_NAME}</h1>
               <p className="text-gray-300 text-sm">

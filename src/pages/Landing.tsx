@@ -93,7 +93,7 @@ const Landing: React.FC<LandingProps> = ({
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Features Designed for Global Travelers
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
             Everything you need to understand and improve your passport power and global mobility.
           </p>
         </div>
@@ -115,7 +115,7 @@ const Landing: React.FC<LandingProps> = ({
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Travel Score Calculation
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Get a comprehensive score based on passport strength, travel history, and residency benefits.
               </p>
               <button onClick={onGetStarted} className="text-primary-600 dark:text-primary-500 hover:underline font-medium text-hover">
@@ -140,7 +140,7 @@ const Landing: React.FC<LandingProps> = ({
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Interactive World Map
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Explore visa requirements for every country with our beautiful 3D globe visualization.
               </p>
               <button onClick={onExploreFeatures} className="text-primary-600 dark:text-primary-500 hover:underline font-medium text-hover">
@@ -165,7 +165,7 @@ const Landing: React.FC<LandingProps> = ({
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Visa Application Assistance
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Apply for visas directly through our platform with discounts for premium members.
               </p>
               <button onClick={onExploreFeatures} className="text-primary-600 dark:text-primary-500 hover:underline font-medium text-hover">

@@ -215,12 +215,6 @@ const AppContent: React.FC = () => {
     checkAuth();
   }, []);
 
-  // Handle theme switching
-  useEffect(() => {
-    // Always use light mode
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', 'light');
-  }, []);
 
   // Handle login action
   const handleLogin = async (email: string, password: string) => {
@@ -419,7 +413,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
         {showHeader && (
           <Header 
             isLoggedIn={isLoggedIn}
