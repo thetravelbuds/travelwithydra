@@ -1,6 +1,6 @@
 # Supabase setup — travelwithhydra organization
 
-Use the **travelwithhydra** Supabase organization (not Sofafurniture or any old Borderly project).
+Use the **travelwithydra** Supabase organization (dashboard may show as travelwithhydra — same account).
 
 ## Where credentials live today
 

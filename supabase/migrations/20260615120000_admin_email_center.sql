@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.email_templates (
 );
 
 CREATE TABLE IF NOT EXISTS public.inbound_messages (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     source TEXT NOT NULL DEFAULT 'contact_form',
     sender_name TEXT,
     sender_email TEXT NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS public.inbound_messages (
 );
 
 CREATE TABLE IF NOT EXISTS public.email_log (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     recipient_email TEXT NOT NULL,
     recipient_user_id UUID REFERENCES public.profiles(id),
     subject TEXT NOT NULL,

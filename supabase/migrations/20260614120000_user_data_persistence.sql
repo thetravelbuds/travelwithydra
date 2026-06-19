@@ -27,7 +27,7 @@ CREATE TRIGGER on_auth_user_created
     FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 CREATE TABLE IF NOT EXISTS public.visa_applications (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     nationality_code VARCHAR(10),
     destination_code VARCHAR(10) NOT NULL,

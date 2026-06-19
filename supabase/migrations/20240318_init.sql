@@ -1,5 +1,4 @@
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+-- UUIDs (gen_random_uuid is built-in on Postgres 13+; no extension required)
 
 -- Drop existing functions and triggers first
 drop function if exists public.handle_new_user() cascade;
@@ -40,7 +39,7 @@ create table profiles (
 
 -- Create subscriptions table
 create table subscriptions (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     user_id uuid references profiles(id) on delete cascade,
     plan_type text not null,
     start_date timestamptz default timezone('utc'::text, now()),
@@ -52,7 +51,7 @@ create table subscriptions (
 
 -- Create upcoming_trips table
 create table upcoming_trips (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     user_id uuid references profiles(id) on delete cascade,
     destination text not null,
     start_date timestamptz not null,
@@ -64,7 +63,7 @@ create table upcoming_trips (
 
 -- Create travel_history table
 create table travel_history (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     user_id uuid references profiles(id) on delete cascade,
     country_code text not null,
     visit_date timestamptz default timezone('utc'::text, now()),
@@ -73,7 +72,7 @@ create table travel_history (
 
 -- Create saved_countries table
 create table saved_countries (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     user_id uuid references profiles(id) on delete cascade,
     country_code text not null,
     created_at timestamptz default timezone('utc'::text, now()),
@@ -82,7 +81,7 @@ create table saved_countries (
 
 -- Create documents table
 create table documents (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     user_id uuid references profiles(id) on delete cascade,
     name text not null,
     type text not null,

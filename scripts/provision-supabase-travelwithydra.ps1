@@ -12,7 +12,7 @@
 
 param(
   [string]$ProjectName = "travelwithydra",
-  [string]$OrgName = "travelwithhydra",
+  [string]$OrgName = "travelwithydra",
   [string]$Region = "eu-west-2",
   [switch]$SkipNetlify
 )
