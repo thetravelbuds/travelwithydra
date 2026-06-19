@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Dashboard/Sidebar';
 import Header from '../components/layout/Header';
 import { motion, AnimatePresence } from 'framer-motion';
-import { calculateTravelScore, getTravelScoreLevel, getScoreBreakdown } from '../utils/travelScore';
+import { calculateTravelScore, getTravelScoreLevel, getScoreBreakdown, getRecommendationLikelihood } from '../utils/travelScore';
+import { isPakistanUkFacilitationProfile, PAKISTAN_UK_FACILITATION } from '../data/residenceFacilitation';
+import { canApplyOnlineForDestination, isSchengenCountry } from '../utils/schengenCountries';
 import VisaRequirementsMap from '../components/Dashboard/SimpleWorldMap'; // Use the renamed map component
 import CountryDetailsModal from '../components/Dashboard/CountryDetailsModal';
 import { VisaRequirement } from '../types/visa'; // Import from visa.ts
@@ -181,6 +183,10 @@ interface VisaRequirementData {
 }
 
 const POPULAR_DESTINATION_META: Record<string, { description: string; tags: string[] }> = {
+  FR: { description: 'Apply for your Schengen visa to France with guided support from Hydra.', tags: ['Schengen', 'Culture'] },
+  DE: { description: 'Schengen visa application support for Germany.', tags: ['Schengen', 'Business'] },
+  IT: { description: 'Schengen visa application support for Italy.', tags: ['Schengen', 'Culture'] },
+  ES: { description: 'Schengen visa application support for Spain.', tags: ['Schengen', 'Beaches'] },
   JP: { description: 'Explore ancient temples and modern cities', tags: ['Culture', 'Food'] },
   NZ: { description: 'Adventure in breathtaking landscapes', tags: ['Nature', 'Adventure'] },
   TH: { description: 'Relax on pristine beaches', tags: ['Beaches', 'Budget'] },
@@ -189,7 +195,9 @@ const POPULAR_DESTINATION_META: Record<string, { description: string; tags: stri
   ZA: { description: 'Wildlife safari and stunning landscapes', tags: ['Safari', 'Adventure'] },
   AU: { description: 'Discover iconic landmarks and vibrant cities', tags: ['Nature', 'Adventure'] },
   IN: { description: 'Experience rich culture and heritage', tags: ['Culture', 'Food'] },
-  TR: { description: 'Where East meets West', tags: ['Culture', 'History'] },
+  TR: { description: 'Fast online Turkish e-Visa — ideal for UK visa holders.', tags: ['eVisa', 'Middle East'] },
+  AE: { description: 'UAE pre-arrival e-Visa using your UK visa credentials.', tags: ['eVisa', 'Middle East'] },
+  MA: { description: 'Streamlined Morocco e-Visa online application.', tags: ['eVisa', 'Africa'] },
   EG: { description: 'Ancient wonders and Nile adventures', tags: ['History', 'Culture'] },
 };
 
@@ -198,6 +206,16 @@ const parseEvisaRequirement = (requirement: string): 'e-visa' | 'eta' | null => 
   if (reqType === 'eta' || reqType === 'esta') return 'eta';
   if (reqType === 'e-visa' || reqType === 'evisa' || reqType === 'electronic visa') return 'e-visa';
   return null;
+};
+
+const normalizeRequirementFromJson = (requirement: string): string => {
+  const r = requirement.toLowerCase().trim();
+  if (r === 'e-visa' || r === 'evisa' || r === 'electronic visa') return 'evisa';
+  if (r === 'eta' || r === 'esta') return 'eta';
+  if (r.includes('visa free') || r === 'visa-free') return 'visa-free';
+  if (r.includes('on arrival')) return 'visa-on-arrival';
+  if (r.includes('visa required')) return 'visa-required';
+  return 'unknown';
 };
 
 const resolveNationalityCode = (nationality: string): string => {
@@ -226,9 +244,10 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
   const [travelScore, setTravelScore] = useState<number>(0);
   const [scoreBreakdown, setScoreBreakdown] = useState<{
     passportComponent: number;
+    mobilityComponent: number;
     historyComponent: number;
     residencyComponent: number;
-  }>({ passportComponent: 0, historyComponent: 0, residencyComponent: 0 });
+  }>({ passportComponent: 0, mobilityComponent: 0, historyComponent: 0, residencyComponent: 0 });
 
   // State for controlling the upgrade banner visibility
   const [showUpgradeBanner, setShowUpgradeBanner] = useState<boolean>(true);
@@ -266,8 +285,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
     name: string;
     code: string;
     description: string;
-    visa_status?: string;
-    tags: string[]
+    serviceType: 'evisa' | 'eta' | 'schengen';
+    likelihoodPercent: number;
+    tags: string[];
   }>>([]);
   const [visaRequirements, setVisaRequirements] = useState<VisaRequirementData[]>([]);
 
@@ -617,7 +637,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
 
   // Country management functions
   const handlePassportCountryClick = (countryCode: string, _stats: PassportMobilityStats) => {
-    navigate(`/visa-checker?nationality=${countryCode.toLowerCase()}`);
+    navigate(`/map/passport/${countryCode.toLowerCase()}`);
   };
 
   const handleSaveCountry = async (countryCode: string) => {
@@ -823,29 +843,22 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
   // New useEffect to calculate score breakdown when userData changes
   useEffect(() => {
     if (userData) {
-      // Get the current total travel score from userData
       const currentTotalScore = userData.travel_score || 0;
-      
-      // Directly allocate the total score based on predefined percentages
-      // Using the standard weighting: 60% passport, 30% history, 10% residency
-      const passportComponent = Math.round(currentTotalScore * 0.6); // 60% to passport strength
-      const historyComponent = Math.round(currentTotalScore * 0.3);  // 30% to travel history
-      
-      // Calculate residency component as the remainder to ensure they sum exactly to total
-      // This avoids any rounding errors that could make the components not add up
-      const residencyComponent = currentTotalScore - passportComponent - historyComponent;
-      
-      // Set the breakdown with these calculated values
-      setScoreBreakdown({
-        passportComponent,
-        historyComponent,
-        residencyComponent
-      });
-      
-      // Ensure the travel score state matches the one from userData
+      const profile = {
+        nationality: userData.nationality || '',
+        residency: userData.residency || userData.nationality || '',
+        travel_history: (userData.travel_history || []).map((code) => ({
+          country_id: code,
+          visit_date: new Date().toISOString(),
+          duration_days: 1,
+          purpose: 'tourism',
+        })),
+      };
+      const breakdown = getScoreBreakdown(profile);
+      setScoreBreakdown(breakdown);
       setTravelScore(currentTotalScore);
     }
-  }, [userData?.travel_score]); // Only recalculate when travel_score changes
+  }, [userData?.travel_score, userData?.nationality, userData?.residency, userData?.travel_history]);
 
   // Function to render the user's current country profile info
   const renderUserCountryInfo = () => {
@@ -934,48 +947,77 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
 
   // Process recommended destinations when visa requirements are loaded
   useEffect(() => {
-    if (visaRequirements.length === 0 || !userData?.nationality?.trim() || !currentProfile?.countries_confirmed) {
+    if (visaRequirements.length === 0 || !userData?.nationality?.trim()) {
       setRecommendationDestinations([]);
       return;
     }
 
     const nationality = userData.nationality;
+    const residency = userData.residency || nationality;
     const passportName = getCountryName(nationality) || nationality;
+    const score = userData.travel_score || travelScore || 0;
+    const natCode = resolveNationalityCode(nationality).toUpperCase();
+    const resCode = resolveNationalityCode(residency).toUpperCase();
 
-    const evisaDestinations = visaRequirements
+    const serviceDestinations = visaRequirements
       .filter((req: VisaRequirementData) => {
         if (req.Passport !== passportName) return false;
-        return parseEvisaRequirement(req.Requirement) !== null;
+        const code = visaRequirementsService.getCountryCodeFromName(req.Destination)?.toLowerCase() || '';
+        const requirement = normalizeRequirementFromJson(req.Requirement);
+        return code && canApplyOnlineForDestination(requirement, code);
       })
       .map((req: VisaRequirementData) => {
-        const visa_status = parseEvisaRequirement(req.Requirement)!;
         const code =
           visaRequirementsService.getCountryCodeFromName(req.Destination)?.toUpperCase() || '';
+        const requirement = normalizeRequirementFromJson(req.Requirement);
+        const isSchengen = isSchengenCountry(code.toLowerCase()) && requirement === 'visa-required';
+        const evisaParsed = parseEvisaRequirement(req.Requirement);
+        const serviceType: 'evisa' | 'eta' | 'schengen' = isSchengen
+          ? 'schengen'
+          : evisaParsed === 'eta'
+            ? 'eta'
+            : 'evisa';
         const meta = POPULAR_DESTINATION_META[code] || {
-          description: `Apply online for travel authorization to ${req.Destination}`,
-          tags: [visa_status === 'eta' ? 'ETA' : 'eVisa'],
+          description: isSchengen
+            ? `Apply for your Schengen visa to ${req.Destination} with Hydra guiding you through the process.`
+            : `Apply online for travel authorization to ${req.Destination}`,
+          tags: [serviceType === 'schengen' ? 'Schengen' : serviceType === 'eta' ? 'ETA' : 'eVisa'],
         };
 
         return {
           name: req.Destination,
           code,
           description: meta.description,
+          serviceType,
+          likelihoodPercent: getRecommendationLikelihood(serviceType, score),
           tags: meta.tags,
-          visa_status,
         };
       })
       .filter((destination) => destination.code);
 
-    // Deduplicate by country code (visa data can contain duplicate rows)
-    const uniqueByCode = new Map<string, typeof evisaDestinations[number]>();
-    for (const destination of evisaDestinations) {
+    if (isPakistanUkFacilitationProfile(natCode, resCode)) {
+      for (const entry of PAKISTAN_UK_FACILITATION) {
+        if (entry.entryType !== 'evisa' && entry.entryType !== 'eta') continue;
+        if (serviceDestinations.some((d) => d.code === entry.countryCode)) continue;
+        serviceDestinations.push({
+          name: entry.countryName,
+          code: entry.countryCode,
+          description: entry.notes,
+          serviceType: entry.entryType === 'eta' ? 'eta' : 'evisa',
+          likelihoodPercent: getRecommendationLikelihood(entry.entryType === 'eta' ? 'eta' : 'evisa', score),
+          tags: ['UK visa holder', entry.region],
+        });
+      }
+    }
+
+    const uniqueByCode = new Map<string, typeof serviceDestinations[number]>();
+    for (const destination of serviceDestinations) {
       if (!uniqueByCode.has(destination.code)) {
         uniqueByCode.set(destination.code, destination);
       }
     }
     const uniqueDestinations = Array.from(uniqueByCode.values());
 
-    // Prefer popular destinations first, then alphabetically by name
     const popularCodes = Object.keys(POPULAR_DESTINATION_META);
     uniqueDestinations.sort((a, b) => {
       const aPopular = popularCodes.indexOf(a.code);
@@ -983,11 +1025,11 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
       if (aPopular !== -1 && bPopular !== -1) return aPopular - bPopular;
       if (aPopular !== -1) return -1;
       if (bPopular !== -1) return 1;
-      return a.name.localeCompare(b.name);
+      return b.name.localeCompare(b.name);
     });
 
     setRecommendationDestinations(uniqueDestinations.slice(0, 6));
-  }, [visaRequirements, userData?.nationality, currentProfile?.countries_confirmed]);
+  }, [visaRequirements, userData?.nationality, userData?.residency, userData?.travel_score, travelScore]);
 
   // Styling for recommended destination cards
   const renderRecommendedDestinations = () => {
@@ -998,13 +1040,13 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
     return (
       <div className="mt-8">
         <h3 className="text-xl font-semibold mb-4">Recommended Destinations</h3>
-        {!userData?.nationality?.trim() || !currentProfile?.countries_confirmed ? (
+        {!userData?.nationality?.trim() ? (
           <p className="text-gray-500 text-sm">
-            Set your nationality and country of residence in Settings to see eVisa and ETA destinations available to you.
+            Set your nationality and country of residence in Settings to see destinations you can apply for with travelwithydra.
           </p>
         ) : recommendationDestinations.length === 0 ? (
           <p className="text-gray-500 text-sm">
-            No eVisa or ETA destinations are available for your nationality at this time.
+            No online visa services are available for your profile at this time.
           </p>
         ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -1014,17 +1056,38 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
               className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="p-4">
-                <div className="flex items-center mb-3">
-                  <img
-                    src={`https://flagcdn.com/${destination.code.toLowerCase()}.svg`}
-                    alt={`${destination.name} flag`}
-                    className="w-8 h-6 mr-2 object-cover rounded"
-                  />
-                  <h4 className="font-semibold text-lg">{destination.name}</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <img
+                      src={`https://flagcdn.com/${destination.code.toLowerCase()}.svg`}
+                      alt={`${destination.name} flag`}
+                      className="w-8 h-6 mr-2 object-cover rounded"
+                    />
+                    <h4 className="font-semibold text-lg">{destination.name}</h4>
+                  </div>
+                  <span className={`text-sm font-bold px-2 py-1 rounded-full ${
+                    destination.likelihoodPercent >= 90
+                      ? 'bg-green-100 text-green-700'
+                      : destination.likelihoodPercent >= 75
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-orange-100 text-orange-700'
+                  }`}>
+                    {destination.likelihoodPercent}% likely
+                  </span>
                 </div>
                 
-                <span className="inline-block px-2 py-1 text-xs rounded-full mb-2 bg-blue-100 text-blue-800">
-                  {destination.visa_status === 'eta' ? 'ETA Available' : 'eVisa Available'}
+                <span className={`inline-block px-2 py-1 text-xs rounded-full mb-2 ${
+                  destination.serviceType === 'schengen'
+                    ? 'bg-purple-100 text-purple-800'
+                    : destination.serviceType === 'eta'
+                      ? 'bg-teal-100 text-teal-800'
+                      : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {destination.serviceType === 'schengen'
+                    ? 'Schengen Visa'
+                    : destination.serviceType === 'eta'
+                      ? 'ETA Available'
+                      : 'eVisa Available'}
                 </span>
                 
                 <p className="text-gray-600 text-sm mb-3">{destination.description}</p>
@@ -1044,7 +1107,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
                   to={`/visa/${destination.code.toLowerCase()}?nationality=${nationalityCode}`}
                   className="mt-2 text-teal-600 hover:text-teal-800 font-medium text-sm flex items-center"
                 >
-                  Apply eVisa
+                  {destination.serviceType === 'schengen' ? 'Apply for Schengen Visa' : 'Apply Now'}
                   <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -1215,7 +1278,25 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
                 
                 <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Travel History</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Mobility Access</span>
+                    <span className="text-sm font-bold text-gray-800 dark:text-white">
+                      {scoreBreakdown.mobilityComponent} pts
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full" 
+                      style={{ 
+                        width: `${Math.min(100, (scoreBreakdown.mobilityComponent / 450) * 100)}%`,
+                        background: 'linear-gradient(to right, #06b6d4, #0891b2)'
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Travel Credibility</span>
                     <span className="text-sm font-bold text-gray-800 dark:text-white">
                       {scoreBreakdown.historyComponent} pts
                     </span>
@@ -1273,14 +1354,19 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
       <div className="card p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Your Travel Profile</h2>
-          <Link to="/world-map" className="text-xs text-teal-600 hover:text-teal-700">View on Map →</Link>
+          <button
+            type="button"
+            onClick={() => setActiveTab('world-map')}
+            className="text-xs text-teal-600 hover:text-teal-700"
+          >
+            View on Map →
+          </button>
         </div>
         
         {/* Travel History Section */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-md font-semibold text-gray-800 dark:text-white">Travel History</h3>
-            <button className="text-xs text-teal-600 hover:text-teal-700">View All →</button>
           </div>
           
           {userData?.travel_history && userData.travel_history.length > 0 ? (
@@ -2022,7 +2108,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
         {isMapLibraryLoaded ? (
           <VisaRequirementsMap
             userNationality={userData?.nationality || ''}
+            highlightedCountryCodes={userData?.travel_history || []}
             onCountrySelect={handlePassportCountryClick}
+            navigateToHubOnClick
           />
         ) : mapLibraryHasError ? (
            <div className="p-8 text-center text-red-600">

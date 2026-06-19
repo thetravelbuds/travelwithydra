@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import authService from '../lib/api/auth';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash, FaApple } from 'react-icons/fa';
-import supabase from '../lib/supabase/client';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import CountrySelect from '../components/CountrySelect';
 
 interface SignUpProps {
@@ -24,22 +23,6 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onNavigateToLogin }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
   const navigate = useNavigate();
-
-  // Debug function to test Supabase connection
-  const testConnection = async () => {
-    console.log('🧪 Testing Supabase connection...');
-    console.log('Supabase client:', supabase);
-    
-    try {
-      // Test basic connection
-      const { data, error } = await supabase.auth.getSession();
-      console.log('✅ Connection test successful:', { data, error });
-      setError('Connection test successful! Check console for details.');
-    } catch (err) {
-      console.error('❌ Connection test failed:', err);
-      setError(`Connection test failed: ${err}`);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,34 +108,6 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onNavigateToLogin }) => {
       // This line might not execute as the redirect happens from the auth service
     } catch (err) {
       console.error("Unexpected error during Google signup:", err);
-      setError('An unexpected error occurred. Please try again.');
-      setIsLoading(false);
-    }
-  };
-
-  const handleAppleSignUp = async () => {
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      console.log("Initiating Apple signup");
-      const { error } = await authService.signInWithApple();
-      
-      if (error) {
-        console.error("Apple signup error:", error);
-        if (error.message === "Unsupported provider: provider is not enabled") {
-          setError("Apple login is currently unavailable. Please sign up with email and password instead.");
-        } else {
-          setError(`Failed to sign up with Apple: ${error.message}`);
-        }
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log("Apple signup initiated - redirecting to Apple");
-      // No need to navigate - OAuth redirection will handle it
-    } catch (err) {
-      console.error("Unexpected error during Apple signup:", err);
       setError('An unexpected error occurred. Please try again.');
       setIsLoading(false);
     }
@@ -403,25 +358,6 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onNavigateToLogin }) => {
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                     </svg>
                     Sign up with Google
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleAppleSignUp}
-                    disabled={isLoading}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mb-3"
-                  >
-                    <FaApple className="h-5 w-5 mr-2" />
-                    Sign up with Apple
-                  </button>
-
-                  {/* Temporary debug button */}
-                  <button
-                    type="button"
-                    onClick={testConnection}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-yellow-300 rounded-md shadow-sm text-sm font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                  >
-                    🧪 Test Supabase Connection
                   </button>
                 </div>
               </div>

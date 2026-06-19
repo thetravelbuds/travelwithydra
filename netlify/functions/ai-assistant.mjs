@@ -1,15 +1,23 @@
 import { jsonResponse, handleOptions, parseBody } from './stripe-shared.mjs';
+import { getServiceClient } from './admin-shared.mjs';
+import {
+  SITE_KNOWLEDGE,
+  extractVisaPair,
+  lookupVisaRequirement,
+  fetchUserContext,
+  buildContextPrompt,
+} from './ai-context.mjs';
 
-const SYSTEM_PROMPT = `You are Hydra, the friendly and knowledgeable AI travel guide for travelwithydra (travelwithydra.com). You help travelers navigate the platform and answer visa, travel planning, and global mobility questions.
+const SYSTEM_PROMPT = `You are Hydra, the AI travel companion for travelwithydra (travelwithydra.com).
 
 PERSONALITY:
-- Warm, confident, and adventurous — like a seasoned travel companion
-- Concise and clear — under 3 sentences when possible
-- Ask only ONE question at a time when you need more information
-- Remember prior messages in the conversation
-- Guide users toward travelwithydra features: visa checker, eVisa applications, travel score, and dashboard
+- Warm, confident, and knowledgeable — like a seasoned travel companion
+- Concise: 2–4 sentences unless the user asks for detail
+- Ask only ONE clarifying question when nationality or destination is missing
+- Always prioritize LIVE CONTEXT and platform data over general knowledge
+- Guide users to the right travelwithydra page with markdown links like [Visa Checker](/visa-checker)
 
-For visa questions: ask nationality, then destination, then travel purpose if needed.`;
+${SITE_KNOWLEDGE}`;
 
 function getGeminiApiKey() {
   return (
@@ -33,7 +41,8 @@ function normalizeTier(tier) {
 }
 
 function tierHasAccess(tier) {
-  return normalizeTier(tier) !== 'free';
+  const normalized = normalizeTier(tier);
+  return normalized === 'free' || normalized === 'premium' || normalized === 'enterprise';
 }
 
 function buildGeminiContents(history) {
@@ -48,6 +57,19 @@ function buildGeminiContents(history) {
   return contents;
 }
 
+function formatClientVisaLookup(lookup) {
+  if (!lookup) return null;
+  return {
+    nationality: lookup.nationality,
+    destination: lookup.destination,
+    destinationCode: lookup.destination?.length === 2 ? lookup.destination : null,
+    requirement: lookup.requirement,
+    stayDuration: lookup.stayDuration,
+    notes: lookup.notes,
+    source: 'client-prefetch',
+  };
+}
+
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return handleOptions();
   if (event.httpMethod !== 'POST') {
@@ -60,7 +82,14 @@ export const handler = async (event) => {
       return jsonResponse(500, { error: 'Gemini API key is not configured on the server' });
     }
 
-    const { message, conversationHistory = [], subscriptionTier = 'free' } = parseBody(event);
+    const {
+      message,
+      conversationHistory = [],
+      subscriptionTier = 'free',
+      accessToken = null,
+      clientContext = null,
+      hydraContext = null,
+    } = parseBody(event);
 
     if (!tierHasAccess(subscriptionTier)) {
       return jsonResponse(403, {
@@ -72,6 +101,46 @@ export const handler = async (event) => {
     if (!message || typeof message !== 'string') {
       return jsonResponse(400, { error: 'Message is required' });
     }
+
+    let userContext = null;
+    let visaLookup = formatClientVisaLookup(hydraContext?.visaLookup);
+
+    try {
+      userContext = await fetchUserContext(accessToken);
+    } catch (e) {
+      console.warn('User context unavailable:', e.message);
+    }
+
+    const defaultNat =
+      userContext?.profile?.nationality || hydraContext?.profileNationality || null;
+
+    if (!visaLookup) {
+      const { nationality, destination } = extractVisaPair(message, defaultNat);
+      if (nationality && destination) {
+        try {
+          const supabase = getServiceClient();
+          visaLookup = await lookupVisaRequirement(supabase, nationality, destination);
+          if (visaLookup) {
+            visaLookup.destinationCode = destination;
+          }
+        } catch (e) {
+          console.warn('Visa DB lookup skipped:', e.message);
+        }
+      }
+    }
+
+    const contextBlock = buildContextPrompt({
+      userContext,
+      clientContext:
+        typeof clientContext === 'string'
+          ? clientContext
+          : clientContext
+            ? JSON.stringify(clientContext)
+            : null,
+      visaLookup,
+    });
+
+    const systemInstruction = SYSTEM_PROMPT + contextBlock;
 
     const history = Array.isArray(conversationHistory) ? conversationHistory : [];
     const filtered = history.filter((m) => m.role === 'user' || m.role === 'assistant');
@@ -92,11 +161,11 @@ export const handler = async (event) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        systemInstruction: { parts: [{ text: systemInstruction }] },
         contents,
         generationConfig: {
-          temperature: 0.5,
-          maxOutputTokens: 512,
+          temperature: 0.4,
+          maxOutputTokens: 768,
         },
       }),
     });

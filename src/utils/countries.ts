@@ -325,7 +325,7 @@ export const generatePassportScores = (): Record<string, number> => {
   const predefinedScores: Record<string, number> = {
     'us': 85, 'gb': 87, 'ca': 86, 'au': 84, 'nz': 83, 'jp': 90, 'sg': 91,
     'de': 88, 'fr': 87, 'ch': 89, 'it': 84, 'es': 83, 'kr': 82, 'sa': 70,
-    'ae': 75, 'in': 65, 'cn': 68, 'br': 72, 'mx': 70, 'za': 68
+    'ae': 75, 'in': 65, 'cn': 68, 'br': 72, 'mx': 70, 'za': 68, 'pk': 48,
   };
   
   // Generate scores for all countries

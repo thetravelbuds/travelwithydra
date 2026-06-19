@@ -707,8 +707,8 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
                   <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Visa Type</h3>
                 </div>
               </div>
-              <div className="p-4">
-                <p className="font-medium text-gray-900 dark:text-white">
+              <div className="p-4 flex items-center min-h-[4.5rem]">
+                <p className="text-sm font-medium leading-snug text-gray-900 dark:text-white text-pretty">
                   {effectiveNationality
                     ? routingResult.visaTypeLabel
                     : visaRequirementForUser?.requirement === 'evisa' ? 'eVisa Available' :
@@ -736,10 +736,10 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
                   <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Validity</h3>
                 </div>
               </div>
-              <div className="p-4">
-                <p className="font-medium text-gray-900 dark:text-white">
+              <div className="p-4 flex items-center min-h-[4.5rem]">
+                <p className="text-sm font-medium leading-snug text-gray-900 dark:text-white text-pretty">
                   {isSchengenDestination
-                    ? "At visa officer's discretion (typically up to 1 year)"
+                    ? "At officer's discretion (up to 1 year)"
                     : product.visaValidity || '90 days from issue'}
                 </p>
               </div>
@@ -753,10 +753,10 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
                   <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Length of Stay</h3>
                 </div>
               </div>
-              <div className="p-4">
-                <p className="font-medium text-gray-900 dark:text-white">
+              <div className="p-4 flex items-center min-h-[4.5rem]">
+                <p className="text-sm font-medium leading-snug text-gray-900 dark:text-white text-pretty">
                   {isSchengenDestination
-                    ? "Visa officer's decision — from 7 days (single entry) to 1 year (multiple entry)"
+                    ? '7 days to 1 year — set by visa officer'
                     : routingResult.maxStayDays
                       ? `${routingResult.maxStayDays} days`
                       : visaRequirementForUser?.stay_duration
@@ -774,10 +774,10 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
                   <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Entry Type</h3>
                 </div>
               </div>
-              <div className="p-4">
-                <p className="font-medium text-gray-900 dark:text-white">
+              <div className="p-4 flex items-center min-h-[4.5rem]">
+                <p className="text-sm font-medium leading-snug text-gray-900 dark:text-white text-pretty">
                   {isSchengenDestination
-                    ? 'Single or multiple (visa officer decides)'
+                    ? 'Single or multiple (officer decides)'
                     : product.entryType === 'multiple'
                       ? 'Multiple'
                       : 'Single'}
@@ -793,8 +793,8 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
                   <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Processing Time</h3>
                 </div>
               </div>
-              <div className="p-4">
-                <p className="font-medium text-gray-900 dark:text-white">
+              <div className="p-4 flex items-center min-h-[4.5rem]">
+                <p className="text-sm font-medium leading-snug text-gray-900 dark:text-white text-pretty">
                   {isSchengenDestination ? (
                     standardProcessingLabel
                   ) : (

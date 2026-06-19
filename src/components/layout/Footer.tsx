@@ -65,17 +65,17 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/blogs/category/visa-tips" className={linkClass}>
+                <Link to="/blogs?category=visa-tips" className={linkClass}>
                   Visa Tips
                 </Link>
               </li>
               <li>
-                <Link to="/blogs/category/destinations" className={linkClass}>
+                <Link to="/blogs?category=destinations" className={linkClass}>
                   Top Destinations
                 </Link>
               </li>
               <li>
-                <Link to="/blogs/category/travel-guides" className={linkClass}>
+                <Link to="/blogs?category=travel-guides" className={linkClass}>
                   Travel Guides
                 </Link>
               </li>

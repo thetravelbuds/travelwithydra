@@ -5,7 +5,7 @@ import CountrySelect from '../components/CountrySelect';
 import CountryCheckbox from '../components/CountryCheckbox';
 import { useNavigate } from 'react-router-dom';
 import { userProfileService } from '../lib/api/userProfile';
-import { calculateTravelScore as calculateTravelScoreUtil } from '../utils/travelScore';
+import { calculateTravelScore as calculateTravelScoreUtil, getMobilityAccessCounts, getScoreBreakdown, getVisaApprovalLikelihoods, getTravelHistoryCredibilityBonus } from '../utils/travelScore';
 
 const TRAVEL_SCORE_SESSION_KEY = 'travelscore_last_calculation';
 
@@ -42,6 +42,9 @@ interface UserData {
   eVisa: number;
   visaRequired: number;
   travelScore: number;
+  approvalLikelihoods: ReturnType<typeof getVisaApprovalLikelihoods>;
+  historyRegions: string[];
+  scoreBreakdown: ReturnType<typeof getScoreBreakdown>;
 }
 
 interface TravelScoreQuestionnaireProps {
@@ -59,7 +62,10 @@ const TravelScoreQuestionnaire: React.FC<TravelScoreQuestionnaireProps> = ({ onS
     visaOnArrival: 0,
     eVisa: 0,
     visaRequired: 0,
-    travelScore: 0
+    travelScore: 0,
+    approvalLikelihoods: [],
+    historyRegions: [],
+    scoreBreakdown: { passportComponent: 0, mobilityComponent: 0, residencyComponent: 0, historyComponent: 0 },
   });
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -103,18 +109,20 @@ const TravelScoreQuestionnaire: React.FC<TravelScoreQuestionnaireProps> = ({ onS
     try {
       const scoreData = {
         nationality: userData.nationality,
-        residency: userData.residence || userData.nationality, // Default to nationality if residency is not specified
+        residency: userData.residence || userData.nationality,
         travel_history: userData.visited.map(country => ({
           country_id: country,
           visit_date: new Date().toISOString(),
-          duration_days: 1, // Default value
-          purpose: 'tourism' // Default value
+          duration_days: 1,
+          purpose: 'tourism'
         }))
       };
 
-      // Calculate score using utility function - passport strength based on nationality
-      const passportStrength = PASSPORT_SCORES[userData.nationality] * 10 || 500; // Convert 0-100 scale to 0-1000
-      const calculatedScore = calculateTravelScoreUtil(scoreData, passportStrength);
+      const calculatedScore = calculateTravelScoreUtil(scoreData);
+      const mobility = getMobilityAccessCounts(userData.nationality, userData.residence || userData.nationality);
+      const breakdown = getScoreBreakdown(scoreData);
+      const likelihoods = getVisaApprovalLikelihoods(scoreData, calculatedScore);
+      const { regions: historyRegions } = getTravelHistoryCredibilityBonus(userData.visited);
       console.log('Calculated travel score:', calculatedScore);
 
       // Store calculator session only — do not overwrite profile nationality/residence
@@ -157,20 +165,16 @@ const TravelScoreQuestionnaire: React.FC<TravelScoreQuestionnaireProps> = ({ onS
         }
       }
       
-      // Calculate visa breakdown numbers (these would normally come from real data)
-      const visaFree = 120; // Default value
-      const visaOnArrival = 40; // Default value
-      const eVisa = 25; // Default value
-      const visaRequired = 15; // Default value
-      
-      // Always show score results and navigate after a delay
       setUserData({
         ...userData,
-        visaFree,
-        visaOnArrival,
-        eVisa,
-        visaRequired,
-        travelScore: calculatedScore
+        visaFree: mobility.visaFree,
+        visaOnArrival: mobility.visaOnArrival,
+        eVisa: mobility.eVisa + mobility.eta,
+        visaRequired: mobility.visaRequired,
+        travelScore: calculatedScore,
+        approvalLikelihoods: likelihoods,
+        historyRegions,
+        scoreBreakdown: breakdown,
       });
       
       setShowResults(true);
@@ -409,7 +413,7 @@ const TravelScoreQuestionnaire: React.FC<TravelScoreQuestionnaireProps> = ({ onS
                       Your Travel Score Results
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">
-                      Based on your nationality, residence, and travel history
+                      Based on your nationality and residence (travel history adds credibility, not visa-free access)
                     </p>
                   </header>
 
@@ -455,8 +459,11 @@ const TravelScoreQuestionnaire: React.FC<TravelScoreQuestionnaireProps> = ({ onS
 
                     <div className="w-full md:w-1/2">
                       <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                        Your Visa-Free Access
+                        Your Mobility Access
                       </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        Counts reflect passport + residence only — past visits do not add visa-free countries.
+                      </p>
                       <div className="space-y-3">
                         <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
                           <div className="flex justify-between mb-1">
@@ -508,21 +515,25 @@ const TravelScoreQuestionnaire: React.FC<TravelScoreQuestionnaireProps> = ({ onS
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-gray-400">Passport Strength</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{Math.round(PASSPORT_SCORES[userData.nationality] * 10) || 500} pts</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{userData.scoreBreakdown.passportComponent} pts</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Mobility (nationality + residence)</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{userData.scoreBreakdown.mobilityComponent} pts</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-gray-400">Residence Bonus</span>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {userData.residence !== userData.nationality && userData.residence ? 
-                            Math.round((PASSPORT_SCORES[userData.residence] || 50) * 2) : '0'} pts
-                        </span>
+                        <span className="font-medium text-gray-900 dark:text-white">{userData.scoreBreakdown.residencyComponent} pts</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Travel History</span>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {Math.min(userData.visited.length * 10, 300)} pts
-                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">Travel History Credibility</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{userData.scoreBreakdown.historyComponent} pts</span>
                       </div>
+                      {userData.historyRegions.length > 0 && (
+                        <p className="text-xs text-teal-600">
+                          Credibility boost from: {userData.historyRegions.join(', ')}
+                        </p>
+                      )}
                       <div className="border-t border-gray-300 dark:border-gray-600 pt-3 mt-3">
                         <div className="flex justify-between font-semibold">
                           <span className="text-gray-800 dark:text-white">Total Score</span>
@@ -531,6 +542,32 @@ const TravelScoreQuestionnaire: React.FC<TravelScoreQuestionnaireProps> = ({ onS
                       </div>
                     </div>
                   </div>
+
+                  {userData.approvalLikelihoods.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8">
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+                        Estimated visa approval likelihood
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Indicative only — based on your travel score, mobility profile, and travel credibility. Not a guarantee.
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+                        {userData.approvalLikelihoods.slice(0, 24).map((item) => (
+                          <div key={item.destinationCode} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <div className="min-w-0 pr-2">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.destinationName}</p>
+                              <p className="text-xs text-gray-500 capitalize">{item.category.replace('-', ' ')}</p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className={`text-sm font-bold ${item.likelihoodPercent >= 70 ? 'text-green-600' : item.likelihoodPercent >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                                {item.likelihoodPercent}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="border border-primary-500 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20 rounded-lg p-6 mb-8">
                     <div className="flex items-start">

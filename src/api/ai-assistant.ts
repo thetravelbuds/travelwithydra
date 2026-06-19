@@ -3,12 +3,29 @@ export interface AiMessage {
   content: string;
 }
 
+export interface HydraRequestContext {
+  accessToken?: string | null;
+  clientContext?: string;
+  hydraContext?: {
+    currentPath?: string;
+    visaLookup?: {
+      nationality: string;
+      destination: string;
+      requirement: string;
+      stayDuration?: number;
+      notes?: string;
+    };
+    profileNationality?: string;
+  };
+}
+
 const API_BASE = '/.netlify/functions';
 
 export async function handleAIAssistantRequest(
   message: string,
   conversationHistory: AiMessage[] = [],
-  subscriptionTier = 'free'
+  subscriptionTier = 'free',
+  context: HydraRequestContext = {}
 ): Promise<{ response: string }> {
   const response = await fetch(`${API_BASE}/ai-assistant`, {
     method: 'POST',
@@ -19,6 +36,9 @@ export async function handleAIAssistantRequest(
         (m) => m.role === 'user' || m.role === 'assistant'
       ),
       subscriptionTier,
+      accessToken: context.accessToken ?? null,
+      clientContext: context.clientContext ?? null,
+      hydraContext: context.hydraContext ?? null,
     }),
   });
 
@@ -27,7 +47,7 @@ export async function handleAIAssistantRequest(
   if (!response.ok) {
     if (data.code === 'SUBSCRIPTION_REQUIRED') {
       throw new Error(
-        'AI Assistant is available on Premium and Enterprise plans. Upgrade at /pricing'
+        'AI Assistant is temporarily unavailable. Please try again or contact support.'
       );
     }
     throw new Error(data.error || `AI request failed (${response.status})`);

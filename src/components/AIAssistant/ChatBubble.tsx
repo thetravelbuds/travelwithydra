@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { handleAIAssistantRequest } from '../../api/ai-assistant';
-import { userProfileService } from '../../lib/api/userProfile';
+import { userProfileService, type UserProfile } from '../../lib/api/userProfile';
+import { prepareHydraRequestContext } from '../../lib/ai/hydraContext';
 import {
   canSendAiMessage,
-  getAiAssistantLimits,
-  getRemainingAiMessages,
   incrementAiDailyUsage,
 } from '../../config/aiAssistantAccess';
 import { AI_ASSISTANT_NAME, AI_WELCOME_MESSAGE } from '../../config/brand';
@@ -193,29 +191,24 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [subscriptionTier, setSubscriptionTier] = useState<string>('free');
-  const [remainingMessages, setRemainingMessages] = useState(0);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const aiLimits = getAiAssistantLimits(subscriptionTier);
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
         const { profile } = await userProfileService.getCurrentUserProfile();
-        const tier = profile?.subscription_tier || 'free';
-        setSubscriptionTier(tier);
-        setRemainingMessages(getRemainingAiMessages(tier));
+        setSubscriptionTier(profile?.subscription_tier || 'free');
+        setUserProfile(profile);
       } catch {
         setSubscriptionTier('free');
-        setRemainingMessages(0);
+        setUserProfile(null);
       }
     };
 
     const handleSubscriptionUpdated = (event: Event) => {
       const custom = event as CustomEvent<{ tier?: string }>;
-      const tier = custom.detail?.tier || 'free';
-      setSubscriptionTier(tier);
-      setRemainingMessages(getRemainingAiMessages(tier));
+      setSubscriptionTier(custom.detail?.tier || 'free');
     };
 
     if (isLoggedIn) loadProfile();
@@ -262,9 +255,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
     }
 
     if (!canSendAiMessage(subscriptionTier)) {
-      const upgradeMsg = aiLimits.hasAccess
-        ? "You've reached today's AI message limit. Try again tomorrow or upgrade to Enterprise for unlimited access."
-        : 'AI Assistant is included with Premium and Enterprise plans.';
+      const upgradeMsg = "You have reached your daily limit of 25 messages. Please try again tomorrow.";
       setMessages((prev) => [
         ...prev,
         { role: 'user' as const, content: inputValue.trim() },
@@ -289,16 +280,15 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
     setIsLoading(true);
 
     try {
-      console.log('Sending message to AI with conversation history:', updatedHistory);
+      const hydraContext = await prepareHydraRequestContext(userMessage, userProfile);
       const { response } = await handleAIAssistantRequest(
         userMessage,
         updatedHistory,
-        subscriptionTier
+        subscriptionTier,
+        hydraContext
       );
-      console.log('Received AI response:', response);
 
       incrementAiDailyUsage();
-      setRemainingMessages(getRemainingAiMessages(subscriptionTier));
       
       const assistantMessage = { role: 'assistant' as const, content: response };
       setMessages(prev => [...prev, assistantMessage]);
@@ -363,8 +353,20 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50"
+        className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-2"
       >
+        {!isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative mr-1"
+          >
+            <div className="rounded-2xl bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-sm font-medium px-4 py-2 shadow-lg border border-gray-200 dark:border-gray-600 whitespace-nowrap">
+              Chat with {AI_ASSISTANT_NAME}
+            </div>
+            <div className="absolute -bottom-1.5 right-6 w-3 h-3 rotate-45 bg-white dark:bg-gray-800 border-r border-b border-gray-200 dark:border-gray-600" />
+          </motion.div>
+        )}
         <button
           onClick={toggleChat}
           className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-primary-500 to-primary-700 hover:from-primary-400 hover:to-primary-600 ring-2 ring-white/20 dark:ring-primary-300/30"
@@ -400,11 +402,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
                     {AI_ASSISTANT_NAME}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {aiLimits.hasAccess
-                      ? Number.isFinite(remainingMessages)
-                        ? `${remainingMessages} messages left today`
-                        : 'Unlimited messages'
-                      : 'Premium feature — upgrade to chat'}
+                    Your AI travel companion
                   </p>
                 </div>
               </div>
@@ -419,13 +417,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
               </button>
             </div>
 
-            {!aiLimits.hasAccess && (
-              <div className="mx-4 mt-3 p-3 bg-primary-50 border border-primary-100 rounded-lg text-sm text-primary-800">
-                Upgrade to{' '}
-                <Link to="/pricing" className="font-semibold underline">
-                  Premium
-                </Link>{' '}
-                to use Gemini-powered travel & visa help.
+            {!canSendAiMessage(subscriptionTier) && isLoggedIn && (
+              <div className="mx-4 mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-100">
+                You have reached your daily limit of 25 messages. Please try again tomorrow.
               </div>
             )}
 
@@ -484,14 +478,16 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ isLoggedIn, onLoginRequired }) 
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder={
-                    aiLimits.hasAccess ? 'Type your question...' : 'Upgrade to Premium to chat'
+                    canSendAiMessage(subscriptionTier)
+                      ? 'Type your question...'
+                      : 'Daily message limit reached'
                   }
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
-                  disabled={isLoading || !aiLimits.hasAccess}
+                  disabled={isLoading || !canSendAiMessage(subscriptionTier)}
                 />
                 <button
                   type="submit"
-                  disabled={!inputValue.trim() || isLoading || !aiLimits.hasAccess}
+                  disabled={!inputValue.trim() || isLoading || !canSendAiMessage(subscriptionTier)}
                   className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Send

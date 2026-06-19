@@ -9,8 +9,8 @@ export const DEFAULT_LOGO_PATH = '/logo-transparent.png';
 export const DEFAULT_LOGO_FALLBACK_PATH = '/logo.png';
 
 export const BRAND_TAGLINE =
-  'Your intelligent travel companion — visa guidance, travel scores, and global mobility made simple.';
+  'Visa guidance, travel scores, and global mobility — powered by Hydra, your AI travel companion.';
 
-export const AI_WELCOME_MESSAGE = `Hi! I'm ${AI_ASSISTANT_NAME}, your travel guide on travelwithydra. I can help with visa requirements, travel plans, and navigating the platform. Where would you like to go?`;
+export const AI_WELCOME_MESSAGE = `Hi! I'm ${AI_ASSISTANT_NAME}, your AI travel companion on ${BRAND_NAME}. I can help with visa requirements, travel scores, trip planning, and everything else on the platform. Where would you like to go?`;
 
 export const AI_SYSTEM_PERSONALITY = `${AI_ASSISTANT_NAME} is warm, knowledgeable, and adventurous — like a seasoned travel companion who knows visas inside out. Speak with confidence and clarity, guide users through travelwithydra features, and keep answers concise.`;

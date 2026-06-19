@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import CountrySelect from './CountrySelect';
 import { ALL_COUNTRIES, getFlagUrl } from '../utils/countries';
 import { visaRequirementsService } from '../services/visaRequirementsService';
@@ -25,6 +25,7 @@ interface VisaCheckerProps {
 
 const VisaChecker: React.FC<VisaCheckerProps> = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [nationality, setNationality] = useState('');
   const [destination, setDestination] = useState('');
   const [result, setResult] = useState<{
@@ -49,6 +50,15 @@ const VisaChecker: React.FC<VisaCheckerProps> = () => {
     destinationCode: destination || 'xx',
     initialSearch: '',
   });
+
+  useEffect(() => {
+    const nat = searchParams.get('nationality');
+    const dest = searchParams.get('destination');
+    const res = searchParams.get('residence');
+    if (nat) setNationality(nat.toLowerCase());
+    if (dest) setDestination(dest.toLowerCase());
+    if (res) setResidenceCountry(res.toLowerCase());
+  }, [searchParams, setResidenceCountry]);
 
   const eligibilityQuery = () => {
     const params = buildEligibilitySearchParams(eligibility);

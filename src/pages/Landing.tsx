@@ -39,11 +39,14 @@ const Landing: React.FC<LandingProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-                  Travel the World with <span className="text-primary-600 dark:text-primary-500">Hydra</span>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-4">
+                  <span className="text-primary-600 dark:text-primary-500">{BRAND_NAME}</span>
                 </h1>
+                <p className="text-lg md:text-xl text-gray-500 dark:text-gray-400 mb-2">
+                  Your intelligent travel platform
+                </p>
                 <p className="text-xl text-gray-700 dark:text-gray-300 mb-8">
-                  {BRAND_NAME} is your intelligent travel companion — check visa requirements, calculate your travel score, and let {AI_ASSISTANT_NAME} guide you every step of the way.
+                  Meet <span className="font-semibold text-primary-600 dark:text-primary-500">{AI_ASSISTANT_NAME}</span> — your AI travel companion who helps with visa checks, travel scores, eVisa applications, and everything you need to travel smarter.
                 </p>
                 <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                   <motion.button

@@ -18,6 +18,7 @@ import Checkout from './pages/Checkout';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import ChatBubble from './components/AIAssistant/ChatBubble';
 import WorldMap from './pages/WorldMap';
+import CountryMobilityHub from './pages/CountryMobilityHub';
 import VisaProduct from './pages/VisaProduct';
 import VisaProductBrowser from './pages/VisaProductBrowser';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -521,6 +522,12 @@ const AppContent: React.FC = () => {
               <Route path="/world-map" element={
                 <RequireAuth>
                   <WorldMap isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} />
+                </RequireAuth>
+              } />
+              <Route path="/map/passport/:countryCode" element={<CountryMobilityHub />} />
+              <Route path="/dashboard/world-map" element={
+                <RequireAuth>
+                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="world-map" />
                 </RequireAuth>
               } />
               <Route path="/profile" element={

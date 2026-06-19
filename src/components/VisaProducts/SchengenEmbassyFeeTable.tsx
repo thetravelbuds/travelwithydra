@@ -12,16 +12,16 @@ const SchengenEmbassyFeeTable: React.FC<{ className?: string }> = ({ className =
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-3 p-4 text-left"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
         aria-expanded={isOpen}
       >
-        <div className="flex items-start gap-2">
-          <FaInfoCircle className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
-          <div>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <FaInfoCircle className="shrink-0 text-amber-700 dark:text-amber-300" />
+          <div className="min-w-0">
             <h4 className="font-semibold text-amber-900 dark:text-amber-100">
               Embassy & appointment centre fees
             </h4>
-            <p className="mt-0.5 text-xs text-amber-800/90 dark:text-amber-200/90">
+            <p className="text-xs text-amber-800/90 dark:text-amber-200/90">
               Information only — not collected by travelwithydra
             </p>
           </div>

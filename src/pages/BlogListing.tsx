@@ -138,10 +138,18 @@ const eVisaBlogs: BlogPost[] = [
   }
 ];
 
+// Map footer / URL slugs to blog category labels
+const CATEGORY_FROM_SLUG: Record<string, string> = {
+  'visa-tips': 'Travel Tips',
+  destinations: 'Places',
+  'travel-guides': 'Travel',
+};
+
 // Blog listing page component
 const BlogListing: React.FC = () => {
   const [searchParams] = useSearchParams();
   const countryFilter = searchParams.get('country')?.toLowerCase() ?? '';
+  const categorySlug = searchParams.get('category') ?? '';
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filteredBlogs, setFilteredBlogs] = useState<BlogPost[]>(blogPosts);
@@ -149,6 +157,14 @@ const BlogListing: React.FC = () => {
   const countryLabel = countryFilter
     ? blogPosts.find(blog => blog.country.code.toLowerCase() === countryFilter)?.country.name
     : undefined;
+
+  useEffect(() => {
+    if (categorySlug && CATEGORY_FROM_SLUG[categorySlug]) {
+      setSelectedCategory(CATEGORY_FROM_SLUG[categorySlug]);
+    } else if (!categorySlug) {
+      setSelectedCategory('all');
+    }
+  }, [categorySlug]);
 
   // All unique categories from blog posts
   const categories = ['all', ...Array.from(new Set(blogPosts.map(blog => blog.category)))];

@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { handleAIAssistantRequest } from '../api/ai-assistant';
-import { userProfileService } from '../lib/api/userProfile';
+import { userProfileService, type UserProfile } from '../lib/api/userProfile';
+import { prepareHydraRequestContext } from '../lib/ai/hydraContext';
 import {
   canSendAiMessage,
-  getAiAssistantLimits,
-  getRemainingAiMessages,
   incrementAiDailyUsage,
 } from '../config/aiAssistantAccess';
 import { AI_ASSISTANT_NAME, AI_WELCOME_MESSAGE } from '../config/brand';
@@ -36,13 +34,11 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isLoggedIn, onLoginRequired }
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState('free');
-  const [remainingMessages, setRemainingMessages] = useState(0);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [conversationHistory, setConversationHistory] = useState<
     { role: 'user' | 'assistant'; content: string }[]
   >([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const aiLimits = getAiAssistantLimits(subscriptionTier);
 
   const suggestions = [
     'What documents do I need for a US visa?',
@@ -59,9 +55,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isLoggedIn, onLoginRequired }
   useEffect(() => {
     if (!isLoggedIn) return;
     userProfileService.getCurrentUserProfile().then(({ profile }) => {
-      const tier = profile?.subscription_tier || 'free';
-      setSubscriptionTier(tier);
-      setRemainingMessages(getRemainingAiMessages(tier));
+      setSubscriptionTier(profile?.subscription_tier || 'free');
+      setUserProfile(profile);
     });
   }, [isLoggedIn]);
 
@@ -75,9 +70,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isLoggedIn, onLoginRequired }
     }
 
     if (!canSendAiMessage(subscriptionTier)) {
-      const text = aiLimits.hasAccess
-        ? "You've reached today's AI message limit."
-        : 'AI Assistant requires a Premium or Enterprise subscription.';
+      const text = 'You have reached your daily limit of 25 messages. Please try again tomorrow.';
       setMessages((prev) => [
         ...prev,
         { id: Date.now().toString(), text: input, sender: 'user', timestamp: new Date() },
@@ -111,14 +104,15 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isLoggedIn, onLoginRequired }
     setConversationHistory(updatedHistory);
 
     try {
+      const hydraContext = await prepareHydraRequestContext(userText, userProfile);
       const { response } = await handleAIAssistantRequest(
         userText,
         updatedHistory,
-        subscriptionTier
+        subscriptionTier,
+        hydraContext
       );
 
       incrementAiDailyUsage();
-      setRemainingMessages(getRemainingAiMessages(subscriptionTier));
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -157,28 +151,22 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isLoggedIn, onLoginRequired }
           transition={{ duration: 0.5 }}
           className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden"
         >
-          <div className="bg-gray-900 dark:bg-gray-950 px-6 py-4 flex items-center gap-3">
+          <div className="bg-gray-900 dark:bg-gray-950 px-6 py-4 flex items-center gap-3 relative">
+            <div className="absolute -top-3 left-6 rounded-full bg-primary-600 text-white text-xs font-semibold px-3 py-1 shadow-md">
+              Chat Assistant
+            </div>
             <BrandLogo size="md" inverted className="ring-1 ring-primary-400/40" />
             <div>
               <h1 className="text-xl font-bold text-white">{AI_ASSISTANT_NAME}</h1>
               <p className="text-gray-300 text-sm">
-                Your travelwithydra guide ·{' '}
-                {aiLimits.hasAccess
-                  ? Number.isFinite(remainingMessages)
-                    ? `${remainingMessages} messages left today`
-                    : 'Unlimited messages'
-                  : 'Premium & Enterprise only'}
+                Your AI travel companion on travelwithydra
               </p>
             </div>
           </div>
 
-          {!aiLimits.hasAccess && isLoggedIn && (
-            <div className="mx-6 mt-4 p-4 bg-primary-50 border border-primary-100 rounded-lg text-sm text-primary-900">
-              Upgrade to{' '}
-              <Link to="/pricing" className="font-semibold underline">
-                Premium
-              </Link>{' '}
-              or Enterprise to unlock the AI assistant.
+          {!canSendAiMessage(subscriptionTier) && isLoggedIn && (
+            <div className="mx-6 mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-100">
+              You have reached your daily limit of 25 messages. Please try again tomorrow.
             </div>
           )}
 
@@ -241,7 +229,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isLoggedIn, onLoginRequired }
                     key={index}
                     type="button"
                     onClick={() => setInput(suggestion)}
-                    disabled={!aiLimits.hasAccess}
+                    disabled={!canSendAiMessage(subscriptionTier)}
                     className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-150 disabled:opacity-50"
                   >
                     {suggestion}
@@ -257,14 +245,16 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ isLoggedIn, onLoginRequired }
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={
-                    aiLimits.hasAccess ? 'Type your question here...' : 'Upgrade to Premium to chat'
+                    canSendAiMessage(subscriptionTier)
+                      ? 'Type your question here...'
+                      : 'Daily message limit reached'
                   }
                   className="flex-1 focus:ring-primary-500 focus:border-primary-500 rounded-l-md block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  disabled={isTyping || !aiLimits.hasAccess}
+                  disabled={isTyping || !canSendAiMessage(subscriptionTier)}
                 />
                 <button
                   type="submit"
-                  disabled={isTyping || !input.trim() || !aiLimits.hasAccess}
+                  disabled={isTyping || !input.trim() || !canSendAiMessage(subscriptionTier)}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                 >
                   Send

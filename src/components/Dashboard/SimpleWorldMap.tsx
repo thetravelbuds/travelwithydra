@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ComposableMap,
   Geographies,
@@ -104,7 +105,9 @@ interface CountryRankData {
 
 interface VisaRequirementsMapProps {
   userNationality?: string;
+  highlightedCountryCodes?: string[];
   onCountrySelect?: (countryCode: string, stats: PassportMobilityStats) => void;
+  navigateToHubOnClick?: boolean;
 }
 
 interface HoveredCountry {
@@ -234,8 +237,11 @@ const PassportStatsCard: React.FC<{ country: HoveredCountry }> = ({ country }) =
 
 const VisaRequirementsMap: React.FC<VisaRequirementsMapProps> = ({
   userNationality = '',
+  highlightedCountryCodes = [],
   onCountrySelect,
+  navigateToHubOnClick = false,
 }) => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [rankByCountryKey, setRankByCountryKey] = useState<Record<string, CountryRankData>>({});
   const [activeCountry, setActiveCountry] = useState<HoveredCountry | null>(null);
@@ -344,11 +350,22 @@ const VisaRequirementsMap: React.FC<VisaRequirementsMapProps> = ({
         return;
       }
 
-      if (info.code && info.stats && onCountrySelect) {
-        onCountrySelect(info.code, info.stats);
+      if (info.code && info.stats) {
+        if (navigateToHubOnClick) {
+          navigate(`/map/passport/${info.code.toLowerCase()}`);
+          return;
+        }
+        if (onCountrySelect) {
+          onCountrySelect(info.code, info.stats);
+        }
       }
     },
-    [lookupStats, onCountrySelect, isTouchMode]
+    [lookupStats, onCountrySelect, isTouchMode, navigateToHubOnClick, navigate]
+  );
+
+  const highlightedSet = useMemo(
+    () => new Set(highlightedCountryCodes.map((c) => c.toUpperCase())),
+    [highlightedCountryCodes]
   );
 
   const getCountryFill = useCallback(
@@ -364,11 +381,13 @@ const VisaRequirementsMap: React.FC<VisaRequirementsMapProps> = ({
 
       if (isActive) return '#0d9488';
 
+      if (code && highlightedSet.has(code)) return '#2dd4bf';
+
       if (userCountryCode && code === userCountryCode) return '#64748b';
 
       return '#e2e8f0';
     },
-    [activeCountry, userCountryCode]
+    [activeCountry, userCountryCode, highlightedSet]
   );
 
   const handleZoomIn = () => {
@@ -402,6 +421,7 @@ const VisaRequirementsMap: React.FC<VisaRequirementsMapProps> = ({
         {userCountryCode && (
           <p className="text-xs text-gray-500 mt-2">
             Your passport ({getCountryName(userCountryCode)}) is highlighted in gray.
+            {highlightedSet.size > 0 && ' Countries you have visited are highlighted in teal.'}
           </p>
         )}
       </div>

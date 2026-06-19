@@ -67,7 +67,7 @@ const Pricing: React.FC<PricingProps> = ({ isLoggedIn, onGetStarted, onSubscribe
         { name: 'Travel History Management (Basic)', included: true },
         { name: 'Travel Alerts', included: false },
         { name: 'Priority Support', included: false },
-        { name: 'AI Travel Assistant', included: false }
+        { name: 'Hydra AI Assistant', included: true }
       ],
       popular: false,
     },
@@ -88,7 +88,7 @@ const Pricing: React.FC<PricingProps> = ({ isLoggedIn, onGetStarted, onSubscribe
         { name: 'Travel History Management (Advanced)', included: true },
         { name: 'Travel Alerts', included: true },
         { name: 'Priority Support', included: true },
-        { name: 'AI Travel Assistant', included: true }
+        { name: 'Hydra AI Assistant', included: true }
       ],
       popular: true,
     },
@@ -109,7 +109,7 @@ const Pricing: React.FC<PricingProps> = ({ isLoggedIn, onGetStarted, onSubscribe
         { name: 'Travel History Management (Enterprise)', included: true },
         { name: 'Travel Alerts', included: true },
         { name: 'Dedicated Support', included: true },
-        { name: 'AI Travel Assistant (Unlimited)', included: true }
+        { name: 'Hydra AI Assistant (Unlimited)', included: true }
       ],
       popular: false,
     }
