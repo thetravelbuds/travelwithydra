@@ -10,7 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const configDir = join(root, 'src', 'config');
 const knowledgeDir = join(root, 'src', 'knowledge');
-const outPath = join(root, 'netlify', 'functions', 'hydra-knowledge.generated.mjs');
+const outPath = join(root, 'netlify', 'functions', 'lib', 'hydra-knowledge.mjs');
 
 const VISA_CONTENT_FILES = [
   { file: 'turkeyEvisaContent.ts', label: 'Turkey eVisa', route: '/visa/tr', code: 'TR' },

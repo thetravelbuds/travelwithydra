@@ -1,5 +1,5 @@
 import { getServiceClient } from './admin-shared.mjs';
-import { HYDRA_KNOWLEDGE } from './hydra-knowledge.generated.mjs';
+import { HYDRA_KNOWLEDGE } from './lib/hydra-knowledge.mjs';
 
 /** Core travelwithydra platform knowledge for Hydra */
 export const SITE_KNOWLEDGE = `
