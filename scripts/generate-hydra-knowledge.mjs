@@ -2,7 +2,7 @@
  * Compiles Hydra AI knowledge from website content configs into a Netlify function module.
  * Run: npm run generate-hydra-knowledge (also runs during npm run build)
  */
-import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -170,5 +170,6 @@ export const HYDRA_KNOWLEDGE_GENERATED_AT = ${JSON.stringify(generatedAt)};
 export const HYDRA_KNOWLEDGE = ${JSON.stringify(knowledge)};
 `;
 
+mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, output, 'utf8');
 console.log(`Hydra knowledge written → ${outPath} (${knowledge.length} chars)`);
