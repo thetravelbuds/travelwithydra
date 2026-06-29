@@ -69,9 +69,9 @@ const Header: React.FC<HeaderProps> = ({
               {logoUrl ? (
                 <img src={logoUrl} alt={BRAND_NAME} className="h-8 md:h-10 max-w-[180px] object-contain" />
               ) : (
-                <span className="flex items-center gap-2">
-                  <BrandLogo size="sm" adaptToDarkMode />
-                  <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <BrandLogo size="sm" variant="auto" className="md:h-10 md:w-10" />
+                  <span className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">
                     travel<span className="text-primary-600 dark:text-primary-400">withydra</span>
                   </span>
                 </span>

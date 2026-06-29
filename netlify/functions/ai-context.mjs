@@ -1,4 +1,5 @@
 import { getServiceClient } from './admin-shared.mjs';
+import { HYDRA_KNOWLEDGE } from './hydra-knowledge.generated.mjs';
 
 /** Core travelwithydra platform knowledge for Hydra */
 export const SITE_KNOWLEDGE = `
@@ -33,8 +34,8 @@ FEATURES:
 
 PRICING HIGHLIGHTS:
 - Basic: free — visa checker, travel score, world map, Hydra AI (daily limit)
-- Premium: eVisa fee discounts 10–20%, travel alerts, priority support
-- Enterprise: unlimited Hydra, dedicated support, higher eVisa discounts
+- Premium: 10% eVisa service fee discount, travel alerts, priority support
+- Enterprise: 20% eVisa service fee discount, unlimited Hydra, dedicated support
 
 RULES FOR ANSWERS:
 - Prefer DATA FROM CONTEXT blocks over general knowledge when provided
@@ -43,6 +44,14 @@ RULES FOR ANSWERS:
 - Never invent visa requirements — if data missing, direct user to /visa-checker
 - Keep answers concise (2–4 sentences). One follow-up question max when info is missing
 - Use markdown links: [text](/path) for internal pages
+`;
+
+/** Full compiled knowledge base (platform + visa guides + blogs + travel agent basics) */
+export const FULL_HYDRA_KNOWLEDGE = `${SITE_KNOWLEDGE}
+
+--- WEBSITE KNOWLEDGE BASE (auto-generated from travelwithydra content) ---
+${HYDRA_KNOWLEDGE}
+--- END KNOWLEDGE BASE ---
 `;
 
 const COUNTRY_ALIASES = {
@@ -256,6 +265,7 @@ export async function fetchUserContext(accessToken) {
     ]);
 
     return {
+      user: { id: userId },
       email: userData.user.email,
       profile: profileRes.data,
       recentApplications: appsRes.data || [],

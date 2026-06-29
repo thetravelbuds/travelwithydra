@@ -4,7 +4,7 @@ export const welcomeEmailTemplate = (name: string = 'there') => `
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Welcome to travelwithydra</title>
+  <title>Welcome to Hydra</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -35,17 +35,17 @@ export const welcomeEmailTemplate = (name: string = 'there') => `
   </style>
 </head>
 <body>
-  <h2>Welcome to travelwithydra!</h2>
+  <h2>Welcome to Hydra!</h2>
   <p>Hello ${name},</p>
-  <p>Thanks for joining travelwithydra — your intelligent travel companion. We're thrilled to have you on board!</p>
-  <p>Whether you're exploring visa requirements, checking your eligibility, or tracking applications, Hydra and the travelwithydra team are here to simplify the process for you.</p>
+  <p>Thanks for joining Hydra — your intelligent travel companion. We're thrilled to have you on board!</p>
+  <p>Whether you're exploring visa requirements, checking your eligibility, or tracking applications, Hydra and our team are here to simplify the process for you.</p>
   <p>If you have any questions, reach us at info@travelwithydra.com.</p>
-  <p><strong>— The travelwithydra Team</strong></p>
+  <p><strong>— The Hydra Team</strong></p>
   
   <div class="footer">
-    <p>© ${new Date().getFullYear()} travelwithydra. All rights reserved.</p>
-    <p>If you did not sign up for travelwithydra, please disregard this email.</p>
+    <p>© ${new Date().getFullYear()} Hydra. All rights reserved.</p>
+    <p>If you did not sign up for Hydra, please disregard this email.</p>
   </div>
 </body>
 </html>
-`; 
+`;

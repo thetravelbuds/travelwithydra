@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import authService from '../lib/api/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import CountrySelect from '../components/CountrySelect';
 
@@ -9,6 +9,15 @@ interface SignUpProps {
   onSignUp: (email: string, password: string, name: string) => void;
   onNavigateToLogin: () => void;
 }
+
+const getPostSignupPath = (): string => {
+  const stored = localStorage.getItem('redirectAfterLogin');
+  if (stored) {
+    localStorage.removeItem('redirectAfterLogin');
+    return stored.startsWith('/') ? stored : `/${stored}`;
+  }
+  return '/dashboard';
+};
 
 const SignUp: React.FC<SignUpProps> = ({ onSignUp, onNavigateToLogin }) => {
   const [name, setName] = useState('');
@@ -23,6 +32,14 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onNavigateToLogin }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signupComplete, setSignupComplete] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const redirect = new URLSearchParams(location.search).get('redirect');
+    if (redirect) {
+      localStorage.setItem('redirectAfterLogin', redirect);
+    }
+  }, [location.search]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +85,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onNavigateToLogin }) => {
         
         // Wait a moment then redirect to dashboard
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate(getPostSignupPath());
         }, 1500);
       } else {
         setError('Failed to create account. Please try again.');

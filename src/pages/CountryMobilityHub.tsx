@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getFlagUrl } from '../utils/countries';
@@ -19,6 +19,18 @@ const CountryMobilityHub: React.FC = () => {
   const code = countryCode.toUpperCase();
   const countryName = resolveCountryName(code);
   const groups = useMemo(() => getPassportMobilityGroups(code), [code]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+
+  const filterDestinations = <T extends { code: string; name: string }>(items: T[]) => {
+    if (!normalizedSearch) return items;
+    return items.filter(
+      (dest) =>
+        dest.name.toLowerCase().includes(normalizedSearch) ||
+        dest.code.toLowerCase().includes(normalizedSearch)
+    );
+  };
 
   const totals = useMemo(
     () => ({
@@ -94,9 +106,23 @@ const CountryMobilityHub: React.FC = () => {
           </div>
         </motion.header>
 
+        <div className="mb-8">
+          <label htmlFor="mobility-country-search" className="sr-only">
+            Search destinations
+          </label>
+          <input
+            id="mobility-country-search"
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search for a country..."
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-white shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+          />
+        </div>
+
         <div className="space-y-8">
           {sectionConfig.map((section) => {
-            const items = groups[section.key];
+            const items = filterDestinations(groups[section.key]);
             if (!items.length) return null;
 
             return (
@@ -143,6 +169,12 @@ const CountryMobilityHub: React.FC = () => {
               </motion.section>
             );
           })}
+          {normalizedSearch &&
+            sectionConfig.every((section) => filterDestinations(groups[section.key]).length === 0) && (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                No countries match &ldquo;{searchQuery.trim()}&rdquo;.
+              </p>
+            )}
         </div>
       </div>
     </div>

@@ -248,6 +248,9 @@ export interface UserProfile {
   subscription_is_lifetime?: boolean;
   stripe_customer_id?: string | null;
   stripe_subscription_id?: string | null;
+  promotional_emails_enabled?: boolean;
+  application_emails_enabled?: boolean;
+  email_unsubscribe_token?: string;
   created_at?: string;
   updated_at?: string;
   profile_image_url?: string;

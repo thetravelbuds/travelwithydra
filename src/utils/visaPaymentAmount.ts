@@ -2,18 +2,37 @@
 
 import { getVisaFeeForCountryCode, DEFAULT_VISA_FEE_GBP, VISA_FEES } from '../data/visaFees';
 import {
+  calculateTotalServiceFeeGbp,
   getDiscountedServiceFeeGbp,
   getServiceFeeDiscountPercent,
+  BASE_SERVICE_FEE_GBP,
+  type ServiceFeeBreakdown,
 } from '../config/visaServiceFee';
 import { isSchengenCountry } from '../utils/schengenCountries';
 import {
   calculateSchengenServiceTotalGbp,
   countTravelDays,
+  getSchengenServiceFeeGbp,
   isUkResident,
+  SCHENGEN_APPOINTMENT_BOOKING_FEE_GBP,
 } from '../config/schengenPricing';
 import { EVISA_EXPRESS_PROCESSING_FEE_GBP } from '../config/evisaPricing';
 import { parseEligibilityFromSearchParams } from '../engine/visaRoutingEngine';
 import { isUnitedStates } from '../utils/unitedStatesVisa';
+import { applyPromoToServiceFeeGbp, type PromoDiscount } from '../config/promoCodes';
+
+export interface VisaPaymentBreakdown {
+  visaFees: number;
+  serviceFee: number;
+  serviceFeeBeforePromo: number;
+  serviceFeeBreakdown: ServiceFeeBreakdown;
+  appointmentFee: number;
+  travelInsurance: number;
+  expressFee: number;
+  promoSavings: number;
+  total: number;
+  travelerCount: number;
+}
 
 /** Main applicant + additional travelers from application stepper data. */
 export function getTravelerCount(applicationData?: Record<string, unknown> | null): number {
@@ -80,41 +99,122 @@ function resolveUkResidentFromApplication(
   return false;
 }
 
-export function getVisaApplicationTotalGbp(
+export function getVisaApplicationBreakdownGbp(
   destinationCode?: string | null,
   applicationData?: Record<string, unknown> | null,
   subscriptionTier?: string | null,
-  nationalityCode?: string | null
-): number {
+  nationalityCode?: string | null,
+  promo?: PromoDiscount | null
+): VisaPaymentBreakdown {
   const travelerCount = getTravelerCount(applicationData);
-  const discountPercent = getServiceFeeDiscountPercent(subscriptionTier);
+  const subscriptionDiscount = getServiceFeeDiscountPercent(subscriptionTier);
+
+  if (promo?.waiveAllFees) {
+    const emptyBreakdown = calculateTotalServiceFeeGbp({
+      travelerCount,
+      subscriptionDiscountPercent: 0,
+      subscriptionTier: subscriptionTier ?? null,
+      destinationCode,
+    });
+    return {
+      visaFees: 0,
+      serviceFee: 0,
+      serviceFeeBeforePromo: 0,
+      serviceFeeBreakdown: { ...emptyBreakdown, total: 0, undiscountedTotal: 0 },
+      appointmentFee: 0,
+      travelInsurance: 0,
+      expressFee: 0,
+      promoSavings: 0,
+      total: 0,
+      travelerCount,
+    };
+  }
 
   if (destinationCode && isSchengenCountry(destinationCode)) {
     const { addTravelInsurance } = getSchengenAddons(applicationData);
     const travelDays = getTravelDaysFromApplication(applicationData);
     const ukResident = resolveUkResidentFromApplication(applicationData, nationalityCode);
 
-    return calculateSchengenServiceTotalGbp({
+    const schengen = calculateSchengenServiceTotalGbp({
       travelerCount,
-      discountPercent,
+      discountPercent: subscriptionDiscount,
+      subscriptionTier: subscriptionTier ?? null,
       addTravelInsurance,
       travelDays,
       isUkResident: ukResident,
-    }).total;
+    });
+
+    const serviceFeeBeforePromo = schengen.serviceFee;
+    const serviceFee = applyPromoToServiceFeeGbp(serviceFeeBeforePromo, promo);
+    const promoSavings = Number((serviceFeeBeforePromo - serviceFee).toFixed(2));
+    const total = Number(
+      (schengen.appointmentFee + serviceFee + schengen.travelInsurance).toFixed(2)
+    );
+
+    return {
+      visaFees: 0,
+      serviceFee,
+      serviceFeeBeforePromo,
+      serviceFeeBreakdown: schengen.serviceFeeBreakdown,
+      appointmentFee: schengen.appointmentFee,
+      travelInsurance: schengen.travelInsurance,
+      expressFee: 0,
+      promoSavings,
+      total,
+      travelerCount,
+    };
   }
 
   const visaFeePerTraveler = destinationCode
     ? getVisaFeeForCountryCode(destinationCode)
     : DEFAULT_VISA_FEE_GBP;
-  const serviceFee = getDiscountedServiceFeeGbp(discountPercent);
-  let total = visaFeePerTraveler * travelerCount + serviceFee;
+  const visaFees = visaFeePerTraveler * travelerCount;
+  const serviceFeeBreakdown = calculateTotalServiceFeeGbp({
+    travelerCount,
+    subscriptionDiscountPercent: subscriptionDiscount,
+    subscriptionTier: subscriptionTier ?? null,
+    destinationCode,
+  });
+  const serviceFeeBeforePromo = serviceFeeBreakdown.total;
+  const serviceFee = applyPromoToServiceFeeGbp(serviceFeeBeforePromo, promo);
+  const promoSavings = Number((serviceFeeBeforePromo - serviceFee).toFixed(2));
 
+  let expressFee = 0;
   const { expressProcessing } = getEvisaAddons(applicationData);
   if (expressProcessing && isEvisaDestinationCode(destinationCode)) {
-    total += EVISA_EXPRESS_PROCESSING_FEE_GBP;
+    expressFee = EVISA_EXPRESS_PROCESSING_FEE_GBP;
   }
 
-  return Number(total.toFixed(2));
+  const total = Number((visaFees + serviceFee + expressFee).toFixed(2));
+
+  return {
+    visaFees,
+    serviceFee,
+    serviceFeeBeforePromo,
+    serviceFeeBreakdown,
+    appointmentFee: 0,
+    travelInsurance: 0,
+    expressFee,
+    promoSavings,
+    total,
+    travelerCount,
+  };
+}
+
+export function getVisaApplicationTotalGbp(
+  destinationCode?: string | null,
+  applicationData?: Record<string, unknown> | null,
+  subscriptionTier?: string | null,
+  nationalityCode?: string | null,
+  promo?: PromoDiscount | null
+): number {
+  return getVisaApplicationBreakdownGbp(
+    destinationCode,
+    applicationData,
+    subscriptionTier,
+    nationalityCode,
+    promo
+  ).total;
 }
 
 /** Total visa application charge in pence (Stripe smallest currency unit). */
@@ -122,14 +222,16 @@ export function getVisaApplicationAmountPence(
   destinationCode?: string | null,
   applicationData?: Record<string, unknown> | null,
   subscriptionTier?: string | null,
-  nationalityCode?: string | null
+  nationalityCode?: string | null,
+  promo?: PromoDiscount | null
 ): number {
   return Math.round(
     getVisaApplicationTotalGbp(
       destinationCode,
       applicationData,
       subscriptionTier,
-      nationalityCode
+      nationalityCode,
+      promo
     ) * 100
   );
 }
@@ -138,14 +240,16 @@ export function getVisaApplicationAmountGbp(
   destinationCode?: string | null,
   applicationData?: Record<string, unknown> | null,
   subscriptionTier?: string | null,
-  nationalityCode?: string | null
+  nationalityCode?: string | null,
+  promo?: PromoDiscount | null
 ): number {
   return (
     getVisaApplicationAmountPence(
       destinationCode,
       applicationData,
       subscriptionTier,
-      nationalityCode
+      nationalityCode,
+      promo
     ) / 100
   );
 }
@@ -161,3 +265,6 @@ export function buildApplicationPaymentContext(
     schengenAddons: schengenAddons ?? {},
   };
 }
+
+/** Exported for display labels in checkout UI */
+export { BASE_SERVICE_FEE_GBP, getSchengenServiceFeeGbp, SCHENGEN_APPOINTMENT_BOOKING_FEE_GBP };

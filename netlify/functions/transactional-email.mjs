@@ -77,6 +77,7 @@ export async function handler(event) {
       'application_in_review',
       'application_approved',
       'application_rejected',
+      'payment_confirmed',
       'membership_upgraded',
       'contact_acknowledgement',
     ];
@@ -109,6 +110,10 @@ export async function handler(event) {
       }
     }
 
+    const emailCategory = type.startsWith('application_') || type === 'payment_confirmed'
+      ? 'application'
+      : 'transactional';
+
     await sendTemplateEmail({
       supabase,
       slug: type,
@@ -116,6 +121,7 @@ export async function handler(event) {
       variables: mergedVars,
       recipientUserId: userId,
       sentBy: 'system',
+      emailCategory,
     });
 
     return jsonResponse(200, { success: true });

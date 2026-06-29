@@ -1,4 +1,5 @@
 import React from 'react';
+import { PLATFORM_NAME } from '../config/brand';
 import LegalPageLayout from '../components/legal/LegalPageLayout';
 import { getCompanyEmail } from '../config/companyContact';
 
@@ -8,7 +9,7 @@ const RefundPolicy: React.FC = () => {
   return (
   <LegalPageLayout title="Refund and Cancellation Policy">
     <p>
-      Thank you for choosing travelwithydra. We want to ensure you have a great experience tracking your
+      Thank you for choosing {PLATFORM_NAME}. We want to ensure you have a great experience tracking your
       global travels.
     </p>
 
@@ -17,7 +18,7 @@ const RefundPolicy: React.FC = () => {
         Cancellations
       </h2>
       <p>
-        You can cancel your premium travelwithydra subscription at any time directly through your account
+        You can cancel your premium {PLATFORM_NAME} subscription at any time directly through your account
         dashboard settings or by contacting our support team at{' '}
         <a href={`mailto:${companyEmail}`} className="text-primary-600 hover:underline">
           {companyEmail}
@@ -32,7 +33,7 @@ const RefundPolicy: React.FC = () => {
         Refunds
       </h2>
       <p className="mb-3">
-        Because travelwithydra provides instant digital access to premium statistics, leaderboards, and
+        Because {PLATFORM_NAME} provides instant digital access to premium statistics, leaderboards, and
         features upon upgrade:
       </p>
       <ul className="list-disc pl-6 space-y-2">

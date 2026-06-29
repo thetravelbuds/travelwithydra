@@ -9,9 +9,11 @@ import BlogSlider from '../Blog/BlogSlider';
 import { getVisaFeeForCountryCode } from '../../data/visaFees';
 import {
   BASE_SERVICE_FEE_GBP,
-  getDiscountedServiceFeeGbp,
+  calculateTotalServiceFeeGbp,
   getServiceFeeDiscountPercent,
 } from '../../config/visaServiceFee';
+import { PLATFORM_NAME } from '../../config/brand';
+import ServiceFeePricingLines from './ServiceFeePricingLines';
 import {
   canApplyOnlineForDestination,
   isSchengenCountry,
@@ -33,6 +35,9 @@ import SchengenEmbassyFeeTable from './SchengenEmbassyFeeTable';
 import SchengenTravelInsuranceAddon from '../VisaEligibility/SchengenTravelInsuranceAddon';
 import EvisaExpressProcessingAddon from '../VisaEligibility/EvisaExpressProcessingAddon';
 import MoroccoWaiverInfo from '../VisaEligibility/MoroccoWaiverInfo';
+import MoroccoEvisaGuide from './MoroccoEvisaGuide';
+import DestinationVisaGuide from './DestinationVisaGuide';
+import SchengenVisaGuide from './SchengenVisaGuide';
 import TurkeyWaiverInfo from '../VisaEligibility/TurkeyWaiverInfo';
 import { EVISA_EXPRESS_PROCESSING_FEE_GBP } from '../../config/evisaPricing';
 import {
@@ -45,6 +50,14 @@ import {
   isTurkeyWaiverUnlocked,
   shouldShowTurkeyWaiverInfo,
 } from '../../config/turkeyWaiver';
+import { isEgyptDestination, EGYPT_VISA_GUIDE } from '../../config/egyptEvisaContent';
+import { isUnitedKingdomDestination, UK_VISA_GUIDE } from '../../config/ukVisaContent';
+import { getUkOccupationChecklist, getCanadaOccupationChecklist } from '../../config/occupationDocumentContent';
+import { USA_VISA_GUIDE } from '../../config/usaVisaContent';
+import { CANADA_VISA_GUIDE, isCanadaDestination } from '../../config/canadaVisaContent';
+import { AUSTRALIA_VISA_GUIDE, isAustraliaDestination } from '../../config/australiaVisaContent';
+import { NEW_ZEALAND_VISA_GUIDE, isNewZealandDestination } from '../../config/newZealandVisaContent';
+import { TURKEY_VISA_GUIDE } from '../../config/turkeyEvisaContent';
 import { 
   FaGlobe, 
   FaPassport, 
@@ -74,6 +87,7 @@ import {
 } from 'react-icons/fa';
 
 import authService from '../../lib/api/auth';
+import visaApplicationsService from '../../lib/api/visaApplications';
 import useSiteSettings from '../../hooks/useSiteSettings';
 import {
   canNationalityApplyForVisa,
@@ -254,6 +268,21 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
 
   const isMorocco = isMoroccoDestination(product.countryCode);
   const isTurkey = isTurkeyDestination(product.countryCode);
+  const isEgypt = isEgyptDestination(product.countryCode);
+  const isUk = isUnitedKingdomDestination(product.countryCode);
+  const isCanada = isCanadaDestination(product.countryCode);
+  const isAustralia = isAustraliaDestination(product.countryCode);
+  const isNewZealand = isNewZealandDestination(product.countryCode);
+  const usesDedicatedGuide =
+    isMorocco ||
+    isTurkey ||
+    isEgypt ||
+    isUk ||
+    isCanada ||
+    isAustralia ||
+    isNewZealand ||
+    isUsDestination ||
+    isSchengenDestination;
   const moroccoWaiverRoute = shouldShowMoroccoWaiverInfo(
     product.countryCode,
     visaRequirementForUser?.requirement
@@ -275,14 +304,30 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
 
   const standardProcessingLabel = isSchengenDestination
     ? 'At least 15 working days'
-    : isEvisaDestination
-      ? '3-5 business days'
-      : product.processingTime?.normal || '10-15 business days';
+    : isCanada
+      ? 'Typically 75–90 days after biometrics'
+      : isAustralia || isNewZealand
+        ? 'Usually within hours to 72 hours'
+        : isEvisaDestination
+          ? '3-5 business days'
+          : product.processingTime?.normal || '10-15 business days';
 
   const hasSubscriptionDiscount = userSubscription.discountPercentage > 0;
 
   const shouldShowPricing = () => {
-    if (!visaRequirementForUser) return isSchengenDestination || isUsDestination;
+    if (!visaRequirementForUser) {
+      return (
+        isSchengenDestination ||
+        isUsDestination ||
+        isUk ||
+        isCanada ||
+        isAustralia ||
+        isNewZealand ||
+        (isMorocco && product.visaType === 'evisa') ||
+        (isTurkey && product.visaType === 'evisa') ||
+        (isEgypt && product.visaType === 'evisa')
+      );
+    }
     return (
       ['evisa', 'eta'].includes(visaRequirementForUser.requirement) ||
       destinationWaiverUnlocked ||
@@ -318,6 +363,12 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
     if (!nationalityCode) {
       localStorage.setItem('redirectAfterLogin', loginReturnPath);
       navigate(`/login?redirect=${encodeURIComponent(loginReturnPath)}`);
+      return;
+    }
+
+    const quota = await visaApplicationsService.checkApplicationQuota(user.id);
+    if (!quota.allowed) {
+      alert(quota.message);
       return;
     }
 
@@ -443,7 +494,7 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
           travelDays: 1,
           isUkResident: false,
         }).serviceFee
-      : getDiscountedServiceFeeGbp(userSubscription.discountPercentage);
+      : getDiscountedServiceFeeGbp(userSubscription.discountPercentage, product.countryCode);
 
   const ukResidentForInsurance = isUkResident(
     eligibility.residenceCountry,
@@ -487,10 +538,13 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
 
   // Memoize price calculations (ensure dependencies are stable)
   const prices = React.useMemo(() => {
+    const subscriptionTier = userSubscription.status;
+
     if (isSchengenDestination) {
       const schengenPricing = calculateSchengenServiceTotalGbp({
         travelerCount,
         discountPercent: userSubscription.discountPercentage,
+        subscriptionTier,
         addTravelInsurance: addTravelInsurance && ukResidentForInsurance,
         travelDays: 1,
         isUkResident: ukResidentForInsurance,
@@ -499,6 +553,7 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
         visaFee: 0,
         appointmentFee: schengenPricing.appointmentFee,
         serviceFee: schengenPricing.serviceFee,
+        serviceFeeBreakdown: schengenPricing.serviceFeeBreakdown,
         travelInsurance: schengenPricing.travelInsurance,
         expressProcessing: 0,
         total: schengenPricing.total,
@@ -506,20 +561,27 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
     }
 
     const visaFee = getVisaApplicationFee();
-    const serviceFee = getDiscountedServiceFeeGbp(userSubscription.discountPercentage);
+    const serviceFeeBreakdown = calculateTotalServiceFeeGbp({
+      travelerCount,
+      subscriptionDiscountPercent: userSubscription.discountPercentage,
+      subscriptionTier,
+      destinationCode: product.countryCode,
+    });
     const expressFee = addExpressProcessing && isEvisaDestination ? EVISA_EXPRESS_PROCESSING_FEE_GBP : 0;
 
     return {
       visaFee,
       appointmentFee: 0,
-      serviceFee,
+      serviceFee: serviceFeeBreakdown.total,
+      serviceFeeBreakdown,
       travelInsurance: 0,
       expressProcessing: expressFee,
-      total: (visaFee + serviceFee) * travelerCount + expressFee,
+      total: visaFee * travelerCount + serviceFeeBreakdown.total + expressFee,
     };
   }, [
     travelerCount,
     userSubscription.discountPercentage,
+    userSubscription.status,
     product.countryCode,
     isSchengenDestination,
     addTravelInsurance,
@@ -529,53 +591,10 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
   ]);
 
   const serviceFeeSavingsGbp = React.useMemo(() => {
-    const undiscountedPerUnit = isSchengenDestination
-      ? SCHENGEN_SERVICE_FEE_GBP
-      : BASE_SERVICE_FEE_GBP;
-    const undiscountedTotal = isSchengenDestination
-      ? undiscountedPerUnit
-      : undiscountedPerUnit * travelerCount;
-    const discountedTotal = isSchengenDestination
-      ? prices.serviceFee
-      : prices.serviceFee * travelerCount;
-    return Math.max(0, Number((undiscountedTotal - discountedTotal).toFixed(2)));
-  }, [isSchengenDestination, prices.serviceFee, travelerCount]);
-
-  const undiscountedServiceFeePerTravelerGbp = isSchengenDestination
-    ? SCHENGEN_SERVICE_FEE_GBP
-    : BASE_SERVICE_FEE_GBP;
-  const serviceFeeLineTotalGbp = isSchengenDestination
-    ? prices.serviceFee
-    : prices.serviceFee * travelerCount;
-  const undiscountedServiceFeeLineTotalGbp = isSchengenDestination
-    ? undiscountedServiceFeePerTravelerGbp
-    : undiscountedServiceFeePerTravelerGbp * travelerCount;
-
-  const renderServiceFeeRow = (label: string) => (
-    <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <p className="text-base text-gray-600 dark:text-gray-400">{label}</p>
-        {hasSubscriptionDiscount && (
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-sm text-gray-400 line-through dark:text-gray-500">
-              {currencySymbol}{undiscountedServiceFeeLineTotalGbp.toFixed(2)}
-            </span>
-            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-              {currencySymbol}{serviceFeeLineTotalGbp.toFixed(2)}
-            </span>
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/40 dark:text-green-200">
-              {userSubscription.discountPercentage}% {getSubscriptionName()} off
-            </span>
-          </div>
-        )}
-      </div>
-      {!hasSubscriptionDiscount && (
-        <p className="shrink-0 text-base font-medium text-gray-700 dark:text-gray-300">
-          {currencySymbol}{serviceFeeLineTotalGbp.toFixed(2)}
-        </p>
-      )}
-    </div>
-  );
+    const breakdown = prices.serviceFeeBreakdown;
+    if (!breakdown) return 0;
+    return Math.max(0, Number((breakdown.undiscountedTotal - breakdown.total).toFixed(2)));
+  }, [prices.serviceFeeBreakdown]);
 
   const renderSubscriptionBanner = (compact = false) => {
     if (hasSubscriptionDiscount) {
@@ -587,7 +606,7 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
             {getSubscriptionName()} member — {userSubscription.discountPercentage}% service fee discount applied
           </p>
           <p className="mt-1 text-sm text-green-700 dark:text-green-300">
-            You save {currencySymbol}{convertCurrency(serviceFeeSavingsGbp).toFixed(2)} on travelwithydra service fees
+            You save {currencySymbol}{convertCurrency(serviceFeeSavingsGbp).toFixed(2)} on {PLATFORM_NAME} service fees
             for this application
           </p>
         </div>
@@ -636,7 +655,10 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="text-4xl font-bold text-white">
-              {product.countryName} <span className="text-primary-400">Visa</span>
+              {product.countryName}{' '}
+              <span className="text-primary-400">
+                {product.visaType === 'evisa' || product.visaType === 'eta' ? 'eVisa' : 'Visa'}
+              </span>
             </motion.h1>
           </div>
           <motion.div 
@@ -892,8 +914,8 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
                       </p>
                       <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
                         {isSchengenDestination
-                          ? 'travelwithydra fees only — embassy fees are paid separately at your appointment.'
-                          : 'Government visa fee plus travelwithydra service fee.'}
+                          ? `${PLATFORM_NAME} fees only — embassy fees are paid separately at your appointment.`
+                          : `Government visa fee plus ${PLATFORM_NAME} service fee.`}
                       </p>
 
                       <div className="space-y-2">
@@ -908,7 +930,13 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
                                 {currencySymbol}{prices.appointmentFee.toFixed(2)}
                               </p>
                             </div>
-                            {renderServiceFeeRow('travelwithydra visa service')}
+                            {prices.serviceFeeBreakdown && (
+                              <ServiceFeePricingLines
+                                breakdown={prices.serviceFeeBreakdown}
+                                currencySymbol={currencySymbol}
+                                subscriptionTierLabel={getSubscriptionName()}
+                              />
+                            )}
                             {prices.travelInsurance > 0 && (
                               <div className="flex items-center justify-between">
                                 <p className="text-base text-gray-600 dark:text-gray-400">
@@ -928,7 +956,13 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
                                 {currencySymbol}{(prices.visaFee * travelerCount).toFixed(2)}
                               </p>
                             </div>
-                            {renderServiceFeeRow('Visa Service Fee')}
+                            {prices.serviceFeeBreakdown && (
+                              <ServiceFeePricingLines
+                                breakdown={prices.serviceFeeBreakdown}
+                                currencySymbol={currencySymbol}
+                                subscriptionTierLabel={getSubscriptionName()}
+                              />
+                            )}
                             {prices.expressProcessing > 0 && (
                               <div className="flex items-center justify-between">
                                 <p className="text-base text-gray-600 dark:text-gray-400">
@@ -974,21 +1008,21 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
                           ) : visaRequirementForUser?.requirement === 'visa-on-arrival' ? (
                             <>You can obtain a visa on arrival when you reach {product.countryName}. This allows you to stay for up to {visaRequirementForUser?.stay_duration || 30} days.</>
                           ) : isUsVisaApplication(visaRequirementForUser?.requirement ?? '', product.countryCode) ? (
-                            <>You need a U.S. visa to travel to the United States. travelwithydra supports the full DS-160 online application with guided document upload.</>
+                            <>You need a U.S. visa to travel to the United States. {PLATFORM_NAME} supports the full DS-160 online application with guided document upload.</>
                           ) : isSchengenVisaApplication(visaRequirementForUser?.requirement ?? '', product.countryCode) ? (
-                            <>You need a Schengen visa to travel to {product.countryName}. travelwithydra supports online Schengen applications with guided document upload and the full Schengen form.</>
+                            <>You need a Schengen visa to travel to {product.countryName}. {PLATFORM_NAME} supports online Schengen applications with guided document upload and the full Schengen form.</>
                           ) : visaRequirementForUser?.requirement === 'visa-required' ? (
                             moroccoWaiverRoute || turkeyWaiverRoute ? (
                               <>
                                 {destinationWaiverUnlocked
-                                  ? `You qualify for the ${product.countryName} e-Visa supporting-document route. Apply online through travelwithydra with your physical supporting visa or residence permit.`
+                                  ? `You qualify for the ${product.countryName} e-Visa supporting-document route. Apply online through ${PLATFORM_NAME} with your physical supporting visa or residence permit.`
                                   : `Citizens of ${userNationalityName || 'your country'} normally need a traditional embassy visa. If you hold a qualifying supporting document, update your eligibility context above to unlock the e-Visa route.`}
                               </>
                             ) : (
                               <>You need to apply for a traditional visa at the {product.countryName} embassy or consulate before your travel.</>
                             )
                           ) : isUsDestination ? (
-                            <>Apply for a U.S. visa through travelwithydra. Our guided DS-160 application covers passport, travel, family, employment, and security questionnaires.</>
+                            <>Apply for a U.S. visa through {PLATFORM_NAME}. Our guided DS-160 application covers passport, travel, family, employment, and security questionnaires.</>
                           ) : (
                             <>Please check with the {product.countryName} embassy or consulate for the most up-to-date visa requirements.</>
                           )}
@@ -1074,12 +1108,41 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
             />
           </motion.div>
         )}
+
+        {isMorocco && <MoroccoEvisaGuide />}
+
+        {isTurkey && <DestinationVisaGuide content={TURKEY_VISA_GUIDE} />}
+
+        {isEgypt && <DestinationVisaGuide content={EGYPT_VISA_GUIDE} />}
+
+        {isUk && (
+          <DestinationVisaGuide
+            content={UK_VISA_GUIDE}
+            occupationChecklist={getUkOccupationChecklist()}
+          />
+        )}
+
+        {isCanada && (
+          <DestinationVisaGuide
+            content={CANADA_VISA_GUIDE}
+            occupationChecklist={getCanadaOccupationChecklist()}
+          />
+        )}
+
+        {isAustralia && <DestinationVisaGuide content={AUSTRALIA_VISA_GUIDE} />}
+
+        {isNewZealand && <DestinationVisaGuide content={NEW_ZEALAND_VISA_GUIDE} />}
+
+        {isUsDestination && <DestinationVisaGuide content={USA_VISA_GUIDE} />}
+
+        {isSchengenDestination && <SchengenVisaGuide countryName={product.countryName} />}
         
-        {/* Documents Required */}
+        {/* Documents Required — Morocco/Schengen list documents in dedicated guides */}
         {((visaRequirementForUser?.requirement === 'visa-required' && (isSchengenDestination || isUsDestination)) ||
           visaRequirementForUser?.requirement === 'evisa' ||
           visaRequirementForUser?.requirement === 'eta' ||
-          isSchengenDestination) && (
+          isSchengenDestination) &&
+          !usesDedicatedGuide && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1140,7 +1203,8 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
           </motion.div>
         )}
         
-        {/* FAQs */}
+        {/* FAQs — Morocco & Schengen use dedicated guide sections */}
+        {!usesDedicatedGuide && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1184,6 +1248,7 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
             ))}
           </div>
         </motion.div>
+        )}
         
         {/* Replace the blog posts section with BlogSlider */}
         <BlogSlider countryCode={product.countryCode} />

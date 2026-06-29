@@ -45,7 +45,7 @@ export const handler = async (event) => {
             price_data: {
               currency: 'gbp',
               product_data: {
-                name: `travelwithydra ${planLabel} Lifetime`,
+                name: `Hydra ${planLabel} Lifetime`,
                 description: 'One-time payment for lifetime access',
               },
               unit_amount: amount,
@@ -56,7 +56,7 @@ export const handler = async (event) => {
             price_data: {
               currency: 'gbp',
               product_data: {
-                name: `travelwithydra ${planLabel}`,
+                name: `Hydra ${planLabel}`,
                 description: `${billingCycle} subscription`,
               },
               unit_amount: amount,

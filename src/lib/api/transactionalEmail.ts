@@ -6,6 +6,7 @@ export type TransactionalEmailType =
   | 'application_in_review'
   | 'application_approved'
   | 'application_rejected'
+  | 'payment_confirmed'
   | 'membership_upgraded'
   | 'contact_acknowledgement';
 
@@ -90,6 +91,25 @@ export const transactionalEmailService = {
         destination: payload.destination,
         application_id: payload.application_id,
         status: payload.status,
+      },
+      payload.email
+    );
+  },
+
+  sendPaymentConfirmed(payload: {
+    name: string;
+    email?: string;
+    destination: string;
+    application_id: string;
+  }) {
+    return sendTransactionalEmail(
+      'payment_confirmed',
+      {
+        name: payload.name,
+        email: payload.email,
+        destination: payload.destination,
+        application_id: payload.application_id,
+        status: 'paid',
       },
       payload.email
     );

@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { generateAllVisaProducts } from '../utils/visaProductGenerator';
 import { VisaProduct } from '../types/visaProduct';
-import { ALL_COUNTRIES } from '../utils/countries';
+import { ALL_COUNTRIES, getFlagUrl } from '../utils/countries';
+import { PLATFORM_NAME } from '../config/brand';
+import SeoHead from '../components/seo/SeoHead';
+import PopularEvisaLinks from '../components/seo/PopularEvisaLinks';
 
 const VisaProductBrowser: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -13,7 +16,7 @@ const VisaProductBrowser: React.FC = () => {
 
   useEffect(() => {
     // Generate all visa products
-    const cloudName = 'travelscore'; // Replace with your actual Cloudinary cloud name
+    const cloudName = 'drdpxs3je';
     const products = generateAllVisaProducts(cloudName);
     setVisaProducts(products);
     setFilteredProducts(products);
@@ -55,7 +58,20 @@ const VisaProductBrowser: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Visa Products</h1>
+      <SeoHead
+        title={`eVisa Destinations Online | Morocco, Turkey, Malaysia & More — ${PLATFORM_NAME}`}
+        description="Browse eVisa destinations and apply online. Morocco eVisa, Turkey eVisa, Malaysia eVisa, Indonesia eVisa and 40+ countries with fees, requirements, and guided applications."
+        keywords="evisa destinations, morocco evisa, turkey evisa, malaysia evisa, apply evisa online"
+        canonicalPath="/visa/browse"
+      />
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">eVisa Destinations</h1>
+      <p className="text-gray-600 mb-6 max-w-2xl">
+        Apply online for popular eVisas including Morocco, Turkey, Malaysia, and Indonesia.
+      </p>
+
+      <div className="mb-10">
+        <PopularEvisaLinks title="Top eVisa applications" compact={false} />
+      </div>
       
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -110,8 +126,16 @@ const VisaProductBrowser: React.FC = () => {
                 {product.images && product.images.length > 0 ? (
                   <img 
                     src={product.images[0]} 
-                    alt={product.countryName} 
+                    alt={product.countryName}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = 'true';
+                        img.src = getFlagUrl(product.countryCode);
+                        img.className = 'w-full h-full object-contain bg-gray-100 p-6';
+                      }
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-100">

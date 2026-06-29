@@ -581,7 +581,7 @@ const TravelScoreQuestionnaire: React.FC<TravelScoreQuestionnaireProps> = ({ onS
                           Want to see where you can travel visa-free?
                         </h3>
                         <p className="text-gray-600 dark:text-gray-400 mt-1">
-                          Sign up for a travelwithydra account to view detailed visa requirements for every country based on your passport.
+                          Sign up for a Hydra account to view detailed visa requirements for every country based on your passport.
                         </p>
                       </div>
                     </div>

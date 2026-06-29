@@ -1,4 +1,5 @@
 import React from 'react';
+import { PLATFORM_NAME } from '../config/brand';
 import LegalPageLayout from '../components/legal/LegalPageLayout';
 import { getCompanyEmail } from '../config/companyContact';
 
@@ -8,12 +9,12 @@ const PrivacyPolicy: React.FC = () => {
   return (
   <LegalPageLayout title="Privacy Policy">
     <p>
-      At travelwithydra, accessible from{' '}
+      At {PLATFORM_NAME}, accessible from{' '}
       <a href="https://travelwithydra.com" className="text-primary-600 hover:underline">
         travelwithydra.com
       </a>
       , one of our main priorities is the privacy of our visitors. This Privacy Policy document
-      contains types of information that is collected and recorded by travelwithydra and how we use it.
+      contains types of information that is collected and recorded by {PLATFORM_NAME} and how we use it.
     </p>
 
     <section>

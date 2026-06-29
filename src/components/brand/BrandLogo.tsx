@@ -1,14 +1,12 @@
 import React from 'react';
-import { DEFAULT_LOGO_PATH } from '../../config/brand';
+import { LOGO_BLACK_PATH } from '../../config/brand';
 
 type BrandLogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface BrandLogoProps {
   size?: BrandLogoSize;
-  /** Invert colors — use on dark or colored backgrounds */
-  inverted?: boolean;
-  /** Auto-invert when OS dark mode is active */
-  adaptToDarkMode?: boolean;
+  /** black = light surfaces, white = inverted for dark surfaces, auto = follow color scheme */
+  variant?: 'black' | 'white' | 'auto';
   className?: string;
   alt?: string;
 }
@@ -22,34 +20,38 @@ const sizeClasses: Record<BrandLogoSize, string> = {
 };
 
 /**
- * Brand mark with circular crop and optional inversion for dark surfaces.
- * Prefers transparent asset when available.
+ * Circular brand mark — logo.png on light surfaces, color-inverted on dark surfaces.
  */
 export const BrandLogo: React.FC<BrandLogoProps> = ({
   size = 'md',
-  inverted = false,
-  adaptToDarkMode = false,
+  variant = 'black',
   className = '',
   alt = '',
 }) => {
-  const filterClass = inverted
-    ? 'brightness-0 invert'
-    : adaptToDarkMode
-      ? 'dark:brightness-0 dark:invert'
-      : '';
+  const wrapperClass = `inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ${sizeClasses[size]} ${className}`;
+  const imgClass = 'block h-full w-full object-cover';
+
+  if (variant === 'auto') {
+    return (
+      <span className={wrapperClass} aria-hidden={!alt}>
+        <img src={LOGO_BLACK_PATH} alt={alt} className={`${imgClass} dark:hidden`} />
+        <img
+          src={LOGO_BLACK_PATH}
+          alt={alt}
+          className={`${imgClass} invert hidden dark:block`}
+        />
+      </span>
+    );
+  }
+
+  const invert = variant === 'white';
 
   return (
-    <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full overflow-hidden ${sizeClasses[size]} ${filterClass} ${className}`}
-      aria-hidden={!alt}
-    >
+    <span className={wrapperClass} aria-hidden={!alt}>
       <img
-        src="/logo-transparent.png"
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = DEFAULT_LOGO_PATH;
-        }}
+        src={LOGO_BLACK_PATH}
         alt={alt}
-        className="h-full w-full object-contain"
+        className={`${imgClass}${invert ? ' invert' : ''}`}
       />
     </span>
   );

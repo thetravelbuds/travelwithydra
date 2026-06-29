@@ -34,12 +34,14 @@ import AdminLogin from './pages/AdminLogin';
 import VisaApplicationPage from './pages/VisaApplicationPage';
 import PaymentPage from './pages/PaymentPage';
 import VisaConfirmationPage from './pages/VisaConfirmationPage';
+import EmailPreferences from './pages/EmailPreferences';
 import ScrollToTop from './components/ScrollToTop';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RefundPolicy from './pages/RefundPolicy';
 import useSiteSettings from './hooks/useSiteSettings';
 import transactionalEmailService from './lib/api/transactionalEmail';
+import { ensureEvisaFeesLoaded } from './services/evisaFeeStore';
 
 // Define types for pages
 type Page = 'landing' | 'login' | 'signup' | 'dashboard' | 'questionnaire' | 'world-map' | 'profile' | 'subscription' | 'evisa' | 
@@ -175,6 +177,10 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { settings: siteSettings } = useSiteSettings();
+
+  useEffect(() => {
+    void ensureEvisaFeesLoaded();
+  }, []);
   
   // Check authentication status on page load
   useEffect(() => {
@@ -245,19 +251,15 @@ const AppContent: React.FC = () => {
     
     // Check if we have a pending redirect
     const redirectPage = localStorage.getItem('redirectAfterLogin');
-    if (redirectPage) {
-      localStorage.removeItem('redirectAfterLogin');
-          navigate(`/${redirectPage}`);
-    } else if (eVisaApplication) {
-      // If there's an eVisa application in progress
-          navigate('/evisa');
-    } else if (checkoutPlan) {
-      // If the user was trying to purchase a subscription
-          navigate('/checkout');
-    } else {
-      // Default path
-          navigate('/dashboard');
-        }
+    if (!redirectPage) {
+      if (eVisaApplication) {
+        navigate('/evisa');
+      } else if (checkoutPlan) {
+        navigate('/checkout');
+      } else {
+        navigate('/dashboard');
+      }
+    }
       }
     } catch (err) {
       console.error("Unexpected login error:", err);
@@ -333,6 +335,16 @@ const AppContent: React.FC = () => {
       // User needs to log in first, redirect to login page
       navigate('/login');
     }
+  };
+
+  const openWorldMap = () => {
+    const worldMapPath = '/dashboard/world-map';
+    if (isLoggedIn) {
+      navigate(worldMapPath);
+      return;
+    }
+    localStorage.setItem('redirectAfterLogin', worldMapPath);
+    navigate(`/login?redirect=${encodeURIComponent(worldMapPath)}`);
   };
 
   // Function to handle subscription flow
@@ -445,7 +457,9 @@ const AppContent: React.FC = () => {
               <Route path="/" element={
                 <Landing 
                   onGetStarted={() => navigate('/questionnaire')}
+                  onCheckVisaEligibility={() => navigate('/visa-checker')}
                   onExploreFeatures={() => navigate('/features')}
+                  onOpenWorldMap={openWorldMap}
                   onApplyEVisa={startEVisaApplication}
                   onPricingSubscribe={handleSubscribe}
                   isLoggedIn={isLoggedIn}
@@ -455,7 +469,14 @@ const AppContent: React.FC = () => {
               <Route path="/login" element={
                 <Login 
                   onLogin={handleLogin} 
-                  onNavigateToSignUp={() => navigate('/signup')} 
+                  onNavigateToSignUp={() => {
+                    const redirect = localStorage.getItem('redirectAfterLogin');
+                    navigate(
+                      redirect
+                        ? `/signup?redirect=${encodeURIComponent(redirect)}`
+                        : '/signup'
+                    );
+                  }}
                 />
               } />
               <Route path="/signup" element={
@@ -491,12 +512,12 @@ const AppContent: React.FC = () => {
               } />
               <Route path="/dashboard" element={
                 <RequireAuth>
-                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} />
+                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} onLogoutClick={handleLogout} />
                 </RequireAuth>
               } />
               <Route path="/travel-score" element={
                 <RequireAuth>
-                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="travel-score" />
+                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="travel-score" onLogoutClick={handleLogout} />
                 </RequireAuth>
               } />
               <Route path="/assistant" element={
@@ -506,17 +527,17 @@ const AppContent: React.FC = () => {
               } />
               <Route path="/trips" element={
                 <RequireAuth>
-                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="trips" />
+                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="trips" onLogoutClick={handleLogout} />
                 </RequireAuth>
               } />
               <Route path="/documents" element={
                 <RequireAuth>
-                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="documents" />
+                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="documents" onLogoutClick={handleLogout} />
                 </RequireAuth>
               } />
               <Route path="/settings" element={
                 <RequireAuth>
-                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="settings" />
+                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="settings" onLogoutClick={handleLogout} />
                 </RequireAuth>
               } />
               <Route path="/world-map" element={
@@ -527,17 +548,17 @@ const AppContent: React.FC = () => {
               <Route path="/map/passport/:countryCode" element={<CountryMobilityHub />} />
               <Route path="/dashboard/world-map" element={
                 <RequireAuth>
-                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="world-map" />
+                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="world-map" onLogoutClick={handleLogout} />
                 </RequireAuth>
               } />
               <Route path="/profile" element={
                 <RequireAuth>
-                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="profile" />
+                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} initialTab="profile" onLogoutClick={handleLogout} />
                 </RequireAuth>
               } />
               <Route path="/subscription" element={
                 <RequireAuth>
-                  <Dashboard />
+                  <Dashboard isLoggedIn={isLoggedIn} onLoginRequired={() => navigate('/login')} onLogoutClick={handleLogout} />
                 </RequireAuth>
               } />
               <Route path="/questionnaire" element={<TravelScoreQuestionnaire onSignUp={() => navigate('/signup')} isLoggedIn={isLoggedIn} />} />
@@ -552,6 +573,7 @@ const AppContent: React.FC = () => {
               <Route path="/payment/:applicationId" element={<PaymentPage />} />
               <Route path="/payment-test" element={<PaymentPage />} />
               <Route path="/visa/confirmation/:applicationId" element={<VisaConfirmationPage />} />
+              <Route path="/email-preferences" element={<EmailPreferences />} />
               <Route path="/blogs" element={<BlogListing />} />
               <Route path="/blog/:id" element={<BlogDetail />} />
               <Route path="/blogs/:countryCode" element={<RequireAuth><BlogListing /></RequireAuth>} />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaChevronDown, FaChevronUp, FaInfoCircle } from 'react-icons/fa';
 import { SCHENGEN_EMBASSY_FEE_REFERENCE } from '../../config/schengenPricing';
+import { PLATFORM_NAME } from '../../config/brand';
 
 const SchengenEmbassyFeeTable: React.FC<{ className?: string }> = ({ className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,7 +23,7 @@ const SchengenEmbassyFeeTable: React.FC<{ className?: string }> = ({ className =
               Embassy & appointment centre fees
             </h4>
             <p className="text-xs text-amber-800/90 dark:text-amber-200/90">
-              Information only — not collected by travelwithydra
+              Information only — not collected by {PLATFORM_NAME}
             </p>
           </div>
         </div>

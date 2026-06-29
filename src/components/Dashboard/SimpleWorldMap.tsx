@@ -192,7 +192,10 @@ const StatRow: React.FC<{ label: string; value: number; color: string }> = ({
   </div>
 );
 
-const PassportStatsCard: React.FC<{ country: HoveredCountry }> = ({ country }) => {
+const PassportStatsCard: React.FC<{
+  country: HoveredCountry;
+  onViewBreakdown?: (code: string) => void;
+}> = ({ country, onViewBreakdown }) => {
   const { name, code, stats, rank } = country;
 
   return (
@@ -227,6 +230,15 @@ const PassportStatsCard: React.FC<{ country: HoveredCountry }> = ({ country }) =
           <p className="text-xs text-gray-400 mt-3">
             {stats.totalDestinations} destinations tracked
           </p>
+          {code && onViewBreakdown && (
+            <button
+              type="button"
+              onClick={() => onViewBreakdown(code.toLowerCase())}
+              className="mt-4 w-full rounded-lg bg-teal-600 px-3 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+            >
+              View full country breakdown
+            </button>
+          )}
         </>
       ) : (
         <p className="text-sm text-gray-500">Passport data not available for this country.</p>
@@ -341,9 +353,13 @@ const VisaRequirementsMap: React.FC<VisaRequirementsMapProps> = ({
       const info = lookupStats(geo.properties);
 
       if (isTouchMode) {
-        setActiveCountry((prev) =>
-          prev?.code === info.code && info.code ? null : info
-        );
+        setActiveCountry((prev) => {
+          if (prev?.code === info.code && info.code) {
+            navigate(`/map/passport/${info.code.toLowerCase()}`);
+            return null;
+          }
+          return info;
+        });
         requestAnimationFrame(() => {
           statsPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
@@ -416,7 +432,7 @@ const VisaRequirementsMap: React.FC<VisaRequirementsMapProps> = ({
           Hover over any country to see where its passport holders can travel — visa-free, eVisa, or traditional visa.
         </p>
         <p className="text-gray-600 text-sm mt-1 lg:hidden">
-          Tap any country on the map to see where its passport holders can travel — visa-free, eVisa, or traditional visa.
+          Tap a country to preview mobility stats. Tap the same country again for the full visa breakdown.
         </p>
         {userCountryCode && (
           <p className="text-xs text-gray-500 mt-2">
@@ -512,7 +528,10 @@ const VisaRequirementsMap: React.FC<VisaRequirementsMapProps> = ({
           className="lg:w-72 xl:w-80 p-4 lg:p-6 flex items-start justify-center lg:border-l border-gray-200 bg-gray-50 min-h-[200px]"
         >
           {activeCountry ? (
-            <PassportStatsCard country={activeCountry} />
+            <PassportStatsCard
+              country={activeCountry}
+              onViewBreakdown={(code) => navigate(`/map/passport/${code}`)}
+            />
           ) : (
             <div className="text-center text-gray-400 text-sm py-8 px-4">
               <svg

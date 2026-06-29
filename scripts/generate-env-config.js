@@ -4,8 +4,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-// Load environment variables from .env file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from .env, then override with .env.local (Vite convention)
 dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../.env.local'), override: true });
 
 const stripePublishableKey =
   process.env.VITE_STRIPE_PUBLIC_KEY ||
@@ -13,10 +17,6 @@ const stripePublishableKey =
   process.env.REACT_APP_STRIPE_PUBLIC_KEY ||
   process.env.STRIPE_PUBLISHABLE_KEY ||
   '';
-
-// Get the directory name in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Define variables that should be available in the browser
 const environmentVars = {

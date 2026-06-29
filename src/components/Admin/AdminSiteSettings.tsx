@@ -39,7 +39,7 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({ onSaved }) => {
       return;
     }
 
-    setMessage(trimmed ? 'Logo updated across the site.' : 'Logo reset to default travelwithydra text.');
+    setMessage(trimmed ? 'Logo updated across the site.' : 'Logo reset to default Hydra text.');
     onSaved?.();
   };
 
@@ -51,7 +51,7 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({ onSaved }) => {
     <div className="rounded-lg bg-white p-6 shadow-md">
       <h2 className="mb-2 text-xl font-semibold">Website logo</h2>
       <p className="mb-4 text-sm text-gray-600">
-        Paste an image URL for your site logo. Leave empty to use the default travelwithydra wordmark.
+        Paste an image URL for your site logo. Leave empty to use the default Hydra wordmark.
       </p>
 
       {message && (
@@ -82,7 +82,7 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({ onSaved }) => {
           <img src={logoUrl.trim()} alt="Site logo preview" className="h-12 max-w-xs object-contain" />
         ) : (
           <span className="flex items-center gap-2">
-            <BrandLogo size="lg" adaptToDarkMode />
+            <BrandLogo size="lg" variant="auto" />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">
               travel<span className="text-primary-600">withydra</span>
             </span>

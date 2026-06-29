@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { calculateTravelScore, getTravelScoreLevel, getScoreBreakdown, getRecommendationLikelihood } from '../utils/travelScore';
 import { isPakistanUkFacilitationProfile, PAKISTAN_UK_FACILITATION } from '../data/residenceFacilitation';
 import { canApplyOnlineForDestination, isSchengenCountry } from '../utils/schengenCountries';
+import { isSupportedEvisaDestination } from '../data/visaFees';
 import VisaRequirementsMap from '../components/Dashboard/SimpleWorldMap'; // Use the renamed map component
 import CountryDetailsModal from '../components/Dashboard/CountryDetailsModal';
 import { VisaRequirement } from '../types/visa'; // Import from visa.ts
@@ -27,7 +28,16 @@ import VisaApplicationProgressSteps from '../components/Dashboard/VisaApplicatio
 import { VisaApplication } from '../types/visa';
 import { isIncompleteDraft, getVisaApplicationProgressLabel } from '../utils/visaApplicationProgress';
 import { visaRequirementsService } from '../services/visaRequirementsService';
+import { BRAND_EMAIL } from '../config/brand';
 import type { PassportMobilityStats } from '../services/visaCsvData';
+import FeatureGate from '../components/Dashboard/FeatureGate';
+import TravelAlertsPanel from '../components/Dashboard/TravelAlertsPanel';
+import OrganizationTravelersPanel from '../components/Dashboard/OrganizationTravelersPanel';
+import {
+  hasSubscriptionFeature,
+  getDocumentVaultLimit,
+} from '../config/subscriptionFeatures';
+import type { UserDocumentRecord } from '../lib/api/documentService';
 import {
   getFlagUrl,
   getAlternativeFlagUrl,
@@ -72,6 +82,7 @@ const CountryFlagImage: React.FC<{ countryValue: string; alt: string }> = ({ cou
 interface DashboardProps {
   isLoggedIn?: boolean;
   onLoginRequired?: () => void;
+  onLogoutClick?: () => void;
   initialTab?: string;
 }
 
@@ -201,6 +212,19 @@ const POPULAR_DESTINATION_META: Record<string, { description: string; tags: stri
   EG: { description: 'Ancient wonders and Nile adventures', tags: ['History', 'Culture'] },
 };
 
+const TRAVEL_SCORE_SESSION_KEY = 'travelscore_last_calculation';
+
+function readSessionTravelScore(): number | null {
+  try {
+    const raw = sessionStorage.getItem(TRAVEL_SCORE_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { travel_score?: number };
+    return typeof parsed.travel_score === 'number' ? parsed.travel_score : null;
+  } catch {
+    return null;
+  }
+}
+
 const parseEvisaRequirement = (requirement: string): 'e-visa' | 'eta' | null => {
   const reqType = requirement.toLowerCase().trim();
   if (reqType === 'eta' || reqType === 'esta') return 'eta';
@@ -223,7 +247,12 @@ const resolveNationalityCode = (nationality: string): string => {
   return (visaRequirementsService.getCountryCodeFromName(nationality) || 'gb').toLowerCase();
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequired, initialTab = 'overview' }) => {
+const Dashboard: React.FC<DashboardProps> = ({
+  isLoggedIn = true,
+  onLoginRequired,
+  onLogoutClick,
+  initialTab = 'overview',
+}) => {
   // State for the map loader
   const mapLoaderState = useMapLoader();
   const { isLoaded: isMapLibraryLoaded, hasError: mapLibraryHasError } = mapLoaderState;
@@ -248,9 +277,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
     historyComponent: number;
     residencyComponent: number;
   }>({ passportComponent: 0, mobilityComponent: 0, historyComponent: 0, residencyComponent: 0 });
-
-  // State for controlling the upgrade banner visibility
-  const [showUpgradeBanner, setShowUpgradeBanner] = useState<boolean>(true);
 
   // State for new trip form
   const [newTripDestination, setNewTripDestination] = useState<string>('');
@@ -281,6 +307,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [documentCategory, setDocumentCategory] = useState('General');
+  const [vaultDocuments, setVaultDocuments] = useState<UserDocumentRecord[]>([]);
   const [recommendationDestinations, setRecommendationDestinations] = useState<Array<{
     name: string;
     code: string;
@@ -299,6 +326,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
   const [editablePhoneNumber, setEditablePhoneNumber] = useState<string>('');
   const [editablePassportNumber, setEditablePassportNumber] = useState<string>('');
   const [editablePassportExpiry, setEditablePassportExpiry] = useState<string>('');
+  const [editableApplicationEmails, setEditableApplicationEmails] = useState<boolean>(true);
+  const [editablePromotionalEmails, setEditablePromotionalEmails] = useState<boolean>(true);
   const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
@@ -323,6 +352,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
         setEditablePhoneNumber(currentProfile.phone_number || '');
         setEditablePassportNumber(currentProfile.passport_number || '');
         setEditablePassportExpiry(currentProfile.passport_expiry || '');
+        setEditableApplicationEmails(currentProfile.application_emails_enabled !== false);
+        setEditablePromotionalEmails(currentProfile.promotional_emails_enabled !== false);
     }
   }, [currentProfile]);
 
@@ -381,6 +412,13 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
         setEditableNationality(extendedProfile.nationality || '');
         setEditableResidency(extendedProfile.residency || '');
         setCurrentProfile(extendedProfile);
+
+        if (hasSubscriptionFeature(extendedProfile.subscription_tier, 'documentVault')) {
+          const { documents } = await documentService.getUserDocuments();
+          setVaultDocuments(documents);
+        } else {
+          setVaultDocuments([]);
+        }
 
         if (!extendedProfile.questionnaire_completed) {
           setTravelScore(0);
@@ -456,7 +494,13 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
   // Header action handlers
   const handleLoginClick = () => navigate('/login');
   const handleSignUpClick = () => navigate('/signup');
-  const handleLogoutClick = () => navigate('/');
+  const handleLogoutClick = () => {
+    if (onLogoutClick) {
+      void onLogoutClick();
+      return;
+    }
+    void authService.signOut().then(() => navigate('/'));
+  };
   const handleDashboardClick = () => navigate('/dashboard');
   const handleHomeClick = () => navigate('/');
   const handleFeaturesClick = () => navigate('/features');
@@ -525,7 +569,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
     });
 
     const content = [
-      'travelwithydra Trip Itinerary',
+      'Hydra Trip Itinerary',
       `Generated: ${new Date().toLocaleDateString()}`,
       '',
       ...lines,
@@ -535,7 +579,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'travelwithydra-itinerary.txt';
+    link.download = 'hydra-itinerary.txt';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -860,6 +904,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
     }
   }, [userData?.travel_score, userData?.nationality, userData?.residency, userData?.travel_history]);
 
+  const displayTravelScore =
+    userData?.travel_score ?? travelScore ?? readSessionTravelScore() ?? 0;
+
   // Function to render the user's current country profile info
   const renderUserCountryInfo = () => {
     if (!userData) return null;
@@ -993,11 +1040,17 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
           tags: meta.tags,
         };
       })
-      .filter((destination) => destination.code);
+      .filter((destination) => destination.code)
+      .filter(
+        (destination) =>
+          destination.serviceType !== 'schengen' &&
+          isSupportedEvisaDestination(destination.code.toLowerCase())
+      );
 
     if (isPakistanUkFacilitationProfile(natCode, resCode)) {
       for (const entry of PAKISTAN_UK_FACILITATION) {
         if (entry.entryType !== 'evisa' && entry.entryType !== 'eta') continue;
+        if (!isSupportedEvisaDestination(entry.countryCode.toLowerCase())) continue;
         if (serviceDestinations.some((d) => d.code === entry.countryCode)) continue;
         serviceDestinations.push({
           name: entry.countryName,
@@ -1018,7 +1071,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
     }
     const uniqueDestinations = Array.from(uniqueByCode.values());
 
-    const popularCodes = Object.keys(POPULAR_DESTINATION_META);
+    const popularCodes = Object.keys(POPULAR_DESTINATION_META).filter((code) =>
+      isSupportedEvisaDestination(code.toLowerCase())
+    );
     uniqueDestinations.sort((a, b) => {
       const aPopular = popularCodes.indexOf(a.code);
       const bPopular = popularCodes.indexOf(b.code);
@@ -1042,7 +1097,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
         <h3 className="text-xl font-semibold mb-4">Recommended Destinations</h3>
         {!userData?.nationality?.trim() ? (
           <p className="text-gray-500 text-sm">
-            Set your nationality and country of residence in Settings to see destinations you can apply for with travelwithydra.
+            Set your nationality and country of residence in Settings to see destinations you can apply for with Hydra.
           </p>
         ) : recommendationDestinations.length === 0 ? (
           <p className="text-gray-500 text-sm">
@@ -1165,7 +1220,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
   const renderOverview = () => (
     <div className="space-y-8">
       {renderMembershipBanner()}
-      {renderUpgradeSection()}
       {/* Travel Score Overview Card */}
       <div className="card bg-white shadow-sm rounded-lg overflow-hidden">
         <div className="p-4 sm:p-6">
@@ -1193,7 +1247,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
               <Link
                 to="/questionnaire"
                 className="mt-5 inline-flex items-center rounded-lg bg-teal-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-teal-700"
-                onClick={() => sessionStorage.setItem('fromQuestionnaire', 'true')}
               >
                 Take Questionnaire
               </Link>
@@ -1228,29 +1281,29 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
                       cy="60"
                       r="54"
                       fill="none"
-                      stroke={getTravelScoreGradient(userData?.travel_score || travelScore)}
+                      stroke={getTravelScoreGradient(displayTravelScore)}
                       strokeWidth="12"
                       strokeDasharray="339.292"
                       strokeDashoffset={
-                        339.292 - (339.292 * (userData?.travel_score || travelScore)) / 1000
+                        339.292 - (339.292 * displayTravelScore) / 1000
                       }
                       transform="rotate(-90 60 60)"
                     />
                   </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-bold text-gray-800 dark:text-white">
-                      {userData?.travel_score || travelScore}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center px-2 text-center">
+                    <span className="text-xl sm:text-3xl font-bold leading-none tabular-nums text-gray-800 dark:text-white">
+                      {displayTravelScore}
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">/ 1000</span>
+                    <span className="mt-1 text-[10px] sm:text-xs leading-none text-gray-500 dark:text-gray-400">/ 1000</span>
                   </div>
                 </div>
               </div>
               <div className="text-center mt-2">
                 <span className="inline-block px-3 py-1 text-sm font-medium rounded-full text-white" 
                   style={{ 
-                    background: `linear-gradient(to right, ${getTravelScoreColor(userData?.travel_score || travelScore)}, ${getTravelScoreColor(userData?.travel_score || travelScore)}CC)` 
+                    background: `linear-gradient(to right, ${getTravelScoreColor(displayTravelScore)}, ${getTravelScoreColor(displayTravelScore)}CC)` 
                   }}>
-                  {getTravelScoreLevel(userData?.travel_score || travelScore)}
+                  {getTravelScoreLevel(displayTravelScore)}
                 </span>
               </div>
             </div>
@@ -1336,10 +1389,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
                 <Link 
                   to="/questionnaire" 
                   className="text-sm text-teal-600 hover:text-teal-700 font-medium"
-                  onClick={() => {
-                    // Set a flag to indicate we're going to the questionnaire
-                    sessionStorage.setItem('fromQuestionnaire', 'true');
-                  }}
                 >
                   Retake Questionnaire
                 </Link>
@@ -1368,7 +1417,13 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-md font-semibold text-gray-800 dark:text-white">Travel History</h3>
           </div>
-          
+
+          <FeatureGate
+            feature="travelHistory"
+            subscriptionTier={userData?.subscription_tier}
+            title="Travel history management"
+            description="Track visited countries and boost your travel score. Available on Premium and Enterprise plans."
+          >
           {userData?.travel_history && userData.travel_history.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {userData.travel_history.slice(0, 10).map((countryCode) => (
@@ -1397,6 +1452,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
               </Link>
             </div>
           )}
+          </FeatureGate>
         </div>
       </div>
       
@@ -1599,8 +1655,19 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
 
   // Render documents section
   const renderDocuments = () => (
+    <FeatureGate
+      feature="documentVault"
+      subscriptionTier={userData?.subscription_tier}
+      title="Document vault"
+      description="Store passports, visas, and travel documents securely. Available on Premium and Enterprise plans."
+    >
     <div className="card p-6">
-      <h3 className="text-xl font-semibold mb-4">Saved Documents</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-semibold">Saved Documents</h3>
+        <span className="text-xs text-gray-500">
+          {vaultDocuments.length} / {getDocumentVaultLimit(userData?.subscription_tier)} files
+        </span>
+      </div>
       
       {/* Add document form */}
       <div className="mb-6 bg-gray-50 p-4 rounded-lg">
@@ -1664,9 +1731,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
       </div>
       
       <div className="space-y-4">
-        {userData?.saved_documents && userData.saved_documents.length > 0 ? (
-          userData.saved_documents.map((doc, index) => (
-          <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        {vaultDocuments.length > 0 ? (
+          vaultDocuments.map((doc) => (
+          <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center space-x-4">
               <div className="p-2 bg-primary-100 rounded-lg">
                 <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1677,8 +1744,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
                 <p className="font-medium">{doc.name}</p>
                   <div className="flex items-center">
                     <p className="text-sm text-gray-500">
-                      {new Date(doc.uploaded).toLocaleDateString()} • {doc.type}
-                      {doc.size ? ` • ${Math.round(doc.size / 1024)} KB` : ''}
+                      {new Date(doc.created_at).toLocaleDateString()} • {doc.file_type || doc.category}
+                      {doc.file_size ? ` • ${Math.round(doc.file_size / 1024)} KB` : ''}
                     </p>
                     {doc.category && (
                       <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">
@@ -1689,9 +1756,9 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
               </div>
             </div>
             <div className="flex space-x-2">
-                {doc.url && (
+                {doc.signed_url && (
                   <a 
-                    href={doc.url} 
+                    href={doc.signed_url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-primary-600 hover:text-primary-700 px-2 py-1"
@@ -1715,37 +1782,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
         )}
       </div>
     </div>
+    </FeatureGate>
   );
-
-  const renderUpgradeSection = () => {
-    const tier = normalizeSubscriptionTier(userData?.subscription_tier);
-    if (tier !== 'free' || !showUpgradeBanner) return null;
-
-    return (
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8 p-6 bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg text-white relative"
-      >
-        <button 
-          className="absolute top-3 right-3 text-white/90 hover:text-white"
-          onClick={() => setShowUpgradeBanner(false)}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <h3 className="text-xl font-semibold mb-2">Upgrade Your Experience</h3>
-        <p className="mb-4">Get access to all premium features and enhance your travel planning.</p>
-        <Link 
-          to="/pricing"
-          className="inline-block bg-white text-primary-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-        >
-          View Plans
-        </Link>
-      </motion.div>
-    );
-  };
 
   const renderTravelScore = () => (
     <div className="card p-6">
@@ -1799,6 +1837,8 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
       phone_number: editablePhoneNumber,
       passport_number: editablePassportNumber,
       passport_expiry: editablePassportExpiry,
+      application_emails_enabled: editableApplicationEmails,
+      promotional_emails_enabled: editablePromotionalEmails,
       countries_confirmed: Boolean(editableNationality?.trim() || editableResidency?.trim()),
     };
 
@@ -2077,6 +2117,44 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
                           )}
                         </div>
                       )}
+                    </div>
+                </div>
+
+                {/* Email preferences */}
+                <div>
+                    <h4 className="font-medium mb-3 text-lg">Email notifications</h4>
+                    <p className="mb-4 text-sm text-gray-600">
+                      Choose which emails you receive from {BRAND_EMAIL}.
+                    </p>
+                    <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600"
+                          checked={editableApplicationEmails}
+                          onChange={(e) => setEditableApplicationEmails(e.target.checked)}
+                        />
+                        <span>
+                          <span className="font-medium text-gray-900">Application updates</span>
+                          <span className="block text-sm text-gray-500">
+                            Submitted, payment confirmed, in review, approved, or rejected.
+                          </span>
+                        </span>
+                      </label>
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600"
+                          checked={editablePromotionalEmails}
+                          onChange={(e) => setEditablePromotionalEmails(e.target.checked)}
+                        />
+                        <span>
+                          <span className="font-medium text-gray-900">Promotions & offers</span>
+                          <span className="block text-sm text-gray-500">
+                            Discount codes, new eVisa destinations, and travel tips.
+                          </span>
+                        </span>
+                      </label>
                     </div>
                 </div>
 
@@ -2488,6 +2566,28 @@ const Dashboard: React.FC<DashboardProps> = ({ isLoggedIn = true, onLoginRequire
         return renderTrips();
       case 'documents':
         return renderDocuments();
+      case 'travel-alerts':
+        return (
+          <FeatureGate
+            feature="travelAlerts"
+            subscriptionTier={userData?.subscription_tier}
+            title="Travel alerts"
+            description="Get notified about application updates and destinations you follow."
+          >
+            <TravelAlertsPanel />
+          </FeatureGate>
+        );
+      case 'travelers':
+        return (
+          <FeatureGate
+            feature="organizationTravelers"
+            subscriptionTier={userData?.subscription_tier}
+            title="Traveler roster"
+            description="Manage travelers for your business on the Enterprise plan."
+          >
+            <OrganizationTravelersPanel subscriptionTier={userData?.subscription_tier} />
+          </FeatureGate>
+        );
       case 'settings':
         return renderSettings();
       case 'visa-applications':

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { SERVICE_FEE_DISCOUNT_PERCENT } from '../config/visaServiceFee';
 
 interface PricingProps {
   isLoggedIn: boolean;
@@ -16,7 +17,7 @@ const Pricing: React.FC<PricingProps> = ({ isLoggedIn, onGetStarted, onSubscribe
     {
       question: 'What are the eVisa fee discounts?',
       answer:
-        'Premium and Enterprise plans include discounts on our eVisa service fees — 10% on Premium and up to 20% on Enterprise depending on billing cycle. Government visa fees are always separate.',
+        `Premium and Enterprise plans include a fixed discount on our eVisa service fees — ${SERVICE_FEE_DISCOUNT_PERCENT.premium}% on Premium and ${SERVICE_FEE_DISCOUNT_PERCENT.enterprise}% on Enterprise, regardless of billing cycle. Every additional applicant on the same application gets 20% off the service fee (30% for Premium, 50% for Enterprise). Government visa fees are always separate.`,
     },
     {
       question: 'Can I cancel my subscription?',
@@ -26,7 +27,7 @@ const Pricing: React.FC<PricingProps> = ({ isLoggedIn, onGetStarted, onSubscribe
     {
       question: 'Do prices include government visa fees?',
       answer:
-        'No. Government visa fees vary by country and are charged separately. Our discounts apply only to travelwithydra processing and assistance fees.',
+        'No. Government visa fees vary by country and are charged separately. Our discounts apply only to Hydra processing and assistance fees. Additional applicants receive 20% off the service fee each (30% for Premium, 50% for Enterprise).',
     },
     {
       question: 'How do I pay for my subscription?',
@@ -61,13 +62,13 @@ const Pricing: React.FC<PricingProps> = ({ isLoggedIn, onGetStarted, onSubscribe
       features: [
         { name: 'Visa Requirement Checker', included: true },
         { name: 'eVisa Application Assistance', included: true },
+        { name: 'Additional applicant service fee discount', included: true, value: '20% each' },
         { name: 'eVisa Fee Discount', included: false },
         { name: 'Travel Score Calculation', included: true },
         { name: 'Interactive World Map', included: true },
-        { name: 'Travel History Management (Basic)', included: true },
         { name: 'Travel Alerts', included: false },
         { name: 'Priority Support', included: false },
-        { name: 'Hydra AI Assistant', included: true }
+        { name: 'Limited AI Assistant', included: true }
       ],
       popular: false,
     },
@@ -82,7 +83,8 @@ const Pricing: React.FC<PricingProps> = ({ isLoggedIn, onGetStarted, onSubscribe
       features: [
         { name: 'Visa Requirement Checker', included: true },
         { name: 'eVisa Application Assistance', included: true },
-        { name: 'eVisa Fee Discount', included: true, value: billingCycle === 'monthly' ? '10%' : billingCycle === 'annual' ? '15%' : '20%' },
+        { name: 'Additional applicant service fee discount', included: true, value: '30% each' },
+        { name: 'eVisa Fee Discount', included: true, value: `${SERVICE_FEE_DISCOUNT_PERCENT.premium}%` },
         { name: 'Travel Score Calculation', included: true },
         { name: 'Interactive World Map', included: true },
         { name: 'Travel History Management (Advanced)', included: true },
@@ -103,7 +105,8 @@ const Pricing: React.FC<PricingProps> = ({ isLoggedIn, onGetStarted, onSubscribe
       features: [
         { name: 'Visa Requirement Checker', included: true },
         { name: 'eVisa Application Assistance', included: true },
-        { name: 'eVisa Fee Discount', included: true, value: billingCycle === 'monthly' ? '20%' : billingCycle === 'annual' ? '15%' : '20%' },
+        { name: 'Additional applicant service fee discount', included: true, value: '50% each' },
+        { name: 'eVisa Fee Discount', included: true, value: `${SERVICE_FEE_DISCOUNT_PERCENT.enterprise}%` },
         { name: 'Travel Score Calculation', included: true },
         { name: 'Interactive World Map', included: true },
         { name: 'Travel History Management (Enterprise)', included: true },

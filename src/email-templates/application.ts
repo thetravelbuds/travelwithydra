@@ -43,7 +43,7 @@ export const applicationEmailTemplate = (name: string = 'there', applicationType
 <body>
   <h2>Application Received 🎉</h2>
   <p>Hello ${name},</p>
-  <p>Thanks for submitting your ${applicationType} application through travelwithydra.</p>
+  <p>Thanks for submitting your ${applicationType} application through Hydra.</p>
   <p>We've successfully received your details and our system is now processing your request. You'll receive an update shortly via email or in your account dashboard.</p>
   
   <div class="application-details">
@@ -53,10 +53,10 @@ export const applicationEmailTemplate = (name: string = 'there', applicationType
   </div>
   
   <p>Need help or want to check your application status? Just log in or contact our support team.</p>
-  <p><strong>Best regards,</strong><br>travelwithydra Application Team</p>
+  <p><strong>Best regards,</strong><br>Hydra Application Team</p>
   
   <div class="footer">
-    <p>© ${new Date().getFullYear()} travelwithydra. All rights reserved.</p>
+    <p>© ${new Date().getFullYear()} Hydra. All rights reserved.</p>
     <p>This is an automated confirmation of your application submission.</p>
   </div>
 </body>

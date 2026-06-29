@@ -5,6 +5,8 @@
 
 import { formatGbp } from '../config/visaServiceFee';
 
+import { getCachedEvisaFee } from '../services/evisaFeeStore';
+
 export interface CountryVisaFee {
   country: string;
   countryCode: string;
@@ -66,6 +68,15 @@ export const VISA_FEES: CountryVisaFee[] = [
 /** Fallback when destination is not in the fee table (China mid-range reference). */
 export const DEFAULT_VISA_FEE_GBP = 61.5;
 
+export function isSupportedEvisaDestination(countryCode: string): boolean {
+  const normalized = countryCode.toLowerCase().trim();
+  return VISA_FEES.some((entry) => entry.countryCode === normalized);
+}
+
+export function getSupportedEvisaCountryCodes(): string[] {
+  return VISA_FEES.map((entry) => entry.countryCode);
+}
+
 export function getVisaFeeForCountry(countryName: string): number {
   const match = VISA_FEES.find(
     (entry) => entry.country.toLowerCase() === countryName.toLowerCase()
@@ -75,6 +86,9 @@ export function getVisaFeeForCountry(countryName: string): number {
 
 export function getVisaFeeForCountryCode(countryCode: string): number {
   const normalized = countryCode.toLowerCase().trim();
+  const cached = getCachedEvisaFee(normalized);
+  if (cached) return Number(cached.visa_fee_gbp);
+
   const byCode = VISA_FEES.find((entry) => entry.countryCode === normalized);
   if (byCode) return byCode.visaFee;
 

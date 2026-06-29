@@ -141,7 +141,7 @@ const VisaApplications: React.FC<VisaApplicationsProps> = ({
         </div>
         <p className="text-gray-800 font-medium">You have not submitted any applications yet.</p>
         <p className="text-gray-500 mt-2 text-sm max-w-md mx-auto">
-          When you apply for an eVisa through travelwithydra, your applications will appear here with status updates.
+          When you apply for an eVisa through Hydra, your applications will appear here with status updates.
         </p>
       </div>
     );

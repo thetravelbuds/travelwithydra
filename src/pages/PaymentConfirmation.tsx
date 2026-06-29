@@ -271,7 +271,7 @@ const PaymentConfirmation: React.FC<PaymentConfirmationProps> = ({ isLoggedIn })
         
         <div className="text-center mt-8">
           <p className="text-gray-600 text-sm">
-            Thank you for choosing travelwithydra for your visa services.
+            Thank you for choosing Hydra for your visa services.
           </p>
         </div>
       </div>

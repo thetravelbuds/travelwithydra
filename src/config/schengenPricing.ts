@@ -1,4 +1,5 @@
 import { normalizeCountryCode } from '../engine/visaRoutingEngine';
+import { calculateTotalServiceFeeGbp, type ServiceFeeBreakdown } from './visaServiceFee';
 
 /** Fees collected by travelwithydra for Schengen applications (GBP). */
 export const SCHENGEN_APPOINTMENT_BOOKING_FEE_GBP = 35;
@@ -116,19 +117,29 @@ export function getSchengenServiceFeeGbp(discountPercent = 0): number {
 export function calculateSchengenServiceTotalGbp(options: {
   travelerCount: number;
   discountPercent?: number;
+  subscriptionTier?: string | null;
   addTravelInsurance: boolean;
   travelDays: number;
   isUkResident: boolean;
 }): {
   appointmentFee: number;
   serviceFee: number;
+  serviceFeeBreakdown: ServiceFeeBreakdown;
   travelInsurance: number;
   travelInsurancePerTraveler: number;
   total: number;
 } {
   const travelerCount = Math.max(options.travelerCount, 1);
   const appointmentFee = SCHENGEN_APPOINTMENT_BOOKING_FEE_GBP * travelerCount;
-  const serviceFee = getSchengenServiceFeeGbp(options.discountPercent ?? 0);
+
+  const serviceFeeBreakdown = calculateTotalServiceFeeGbp({
+    travelerCount,
+    subscriptionDiscountPercent: options.discountPercent ?? 0,
+    subscriptionTier: options.subscriptionTier,
+    baseServiceFeeGbp: SCHENGEN_SERVICE_FEE_GBP,
+  });
+  const serviceFee = serviceFeeBreakdown.total;
+
   const travelInsurancePerTraveler =
     options.addTravelInsurance && options.isUkResident
       ? calculateSchengenTravelInsuranceGbp(options.travelDays || 1)
@@ -139,6 +150,7 @@ export function calculateSchengenServiceTotalGbp(options: {
   return {
     appointmentFee,
     serviceFee,
+    serviceFeeBreakdown,
     travelInsurance,
     travelInsurancePerTraveler,
     total,

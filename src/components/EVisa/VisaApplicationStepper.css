@@ -1,15 +1,11 @@
-/* Teal gradient background for the application */
-body {
-  background: linear-gradient(135deg, #e0f7fa 0%, #80cbc4 50%, #26a69a 100%);
+/* Visa application stepper — plain background */
+.visa-application-stepper {
   min-height: 100vh;
+  background: #ffffff;
 }
 
-/* Enhance container styling */
-.max-w-7xl {
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 1rem;
+.visa-application-stepper .max-w-7xl {
   margin-top: 2rem;
   padding-top: 2rem;
   padding-bottom: 2rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-} 
+}

@@ -21,7 +21,9 @@ function parseBody(event) {
 async function listMembers(supabase, filters = {}) {
   let query = supabase
     .from('profiles')
-    .select('id, email, full_name, nationality, residency, subscription_tier, created_at, questionnaire_completed')
+    .select(
+      'id, email, full_name, nationality, residency, subscription_tier, created_at, questionnaire_completed, application_emails_enabled, promotional_emails_enabled, email_unsubscribe_token'
+    )
     .order('created_at', { ascending: false });
 
   if (filters.nationality) {
@@ -102,7 +104,7 @@ async function replyInbound(supabase, adminId, payload) {
 
   if (fetchError) throw fetchError;
 
-  const replySubject = subject?.trim() || `Re: ${inbound.subject || 'Your message to travelwithydra'}`;
+  const replySubject = subject?.trim() || `Re: ${inbound.subject || 'Your message to Hydra'}`;
   const html = `
     <p>${String(replyBody).replace(/\n/g, '<br>')}</p>
     <hr>
@@ -143,6 +145,7 @@ async function sendBulkEmail(supabase, adminId, payload) {
     templateSlug,
     selectedUserIds = [],
     useFilters = true,
+    emailCategory: requestedCategory,
   } = payload;
 
   let recipients = [];
@@ -150,7 +153,9 @@ async function sendBulkEmail(supabase, adminId, payload) {
   if (selectedUserIds.length > 0) {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, nationality, residency, subscription_tier')
+      .select(
+        'id, email, full_name, nationality, residency, subscription_tier, application_emails_enabled, promotional_emails_enabled'
+      )
       .in('id', selectedUserIds);
     if (error) throw error;
     recipients = data ?? [];
@@ -160,8 +165,20 @@ async function sendBulkEmail(supabase, adminId, payload) {
 
   recipients = recipients.filter((profile) => profile.email);
 
+  const isPromotional =
+    requestedCategory === 'promotional' ||
+    !templateSlug ||
+    templateSlug === 'promotional';
+  if (isPromotional) {
+    recipients = recipients.filter((profile) => profile.promotional_emails_enabled !== false);
+  }
+
   if (recipients.length === 0) {
-    throw new Error('No recipients matched your filters');
+    throw new Error(
+      isPromotional
+        ? 'No recipients matched your filters (or all opted out of promotional emails)'
+        : 'No recipients matched your filters'
+    );
   }
 
   let template = null;
@@ -187,10 +204,17 @@ async function sendBulkEmail(supabase, adminId, payload) {
     };
 
     const rendered = template
-      ? renderTemplate(template, variables)
-      : { subject: subject.trim(), html: html.trim().replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key] ?? '') };
+      ? renderTemplate(template, {
+          ...variables,
+          subject_line: subject?.trim() || template.subject,
+          body_html: html?.trim() || '',
+        })
+      : {
+          subject: subject.trim(),
+          html: html.trim().replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key] ?? ''),
+        };
 
-    await sendRenderedEmail({
+    const sendResult = await sendRenderedEmail({
       supabase,
       to: profile.email,
       subject: rendered.subject,
@@ -199,9 +223,12 @@ async function sendBulkEmail(supabase, adminId, payload) {
       recipientUserId: profile.id,
       sentBy: 'admin',
       adminId,
+      emailCategory: isPromotional ? 'promotional' : 'application',
     });
 
-    results.push(profile.email);
+    if (!sendResult?.skipped) {
+      results.push(profile.email);
+    }
   }
 
   return { sent: results.length, recipients: results };

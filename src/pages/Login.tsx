@@ -13,7 +13,7 @@ const getPostLoginPath = (): string => {
   const stored = localStorage.getItem('redirectAfterLogin');
   if (stored) {
     localStorage.removeItem('redirectAfterLogin');
-    return stored;
+    return stored.startsWith('/') ? stored : `/${stored}`;
   }
   return '/dashboard';
 };

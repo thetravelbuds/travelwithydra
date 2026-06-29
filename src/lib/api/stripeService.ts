@@ -2,6 +2,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 import authService from './auth';
 import { SubscriptionType, BillingCycle } from '../../config/stripePricing';
 import { getStripePublishableKey } from '../../config/stripeEnv';
+import type { CreatePaymentIntentResult } from './promoCodes';
 
 let stripePromise: Promise<Stripe | null> | null = null;
 
@@ -19,10 +20,18 @@ export function getStripePromise(): Promise<Stripe | null> {
 
 const API_BASE = '/.netlify/functions';
 
-async function postJson<T>(path: string, body: Record<string, unknown>): Promise<T> {
+async function postJson<T>(path: string, body: Record<string, unknown>, auth = false): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (auth) {
+    const { session } = await authService.getSession();
+    const token = session?.access_token;
+    if (!token) throw new Error('You must be signed in.');
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}/${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
 
@@ -63,13 +72,15 @@ class StripeService {
     window.location.href = sessionUrl;
   }
 
-  async createPaymentIntent(amountPence: number, applicationId: string): Promise<string> {
-    const data = await postJson<{ clientSecret: string }>('create-payment-intent', {
-      amount: amountPence,
+  async createPaymentIntent(
+    applicationId: string,
+    promoCode?: string
+  ): Promise<CreatePaymentIntentResult> {
+    return postJson('create-payment-intent', {
       applicationId,
+      promoCode: promoCode?.trim() || undefined,
       currency: 'gbp',
-    });
-    return data.clientSecret;
+    }, true);
   }
 
   async verifyCheckoutSession(sessionId: string): Promise<{

@@ -484,6 +484,43 @@ export async function processPassportImage(file: File): Promise<OCRResult> {
 }
 
 /**
+ * Extract plain text from a travel document (itinerary, ticket, hotel confirmation).
+ * Skips passport-specific image validation.
+ */
+export async function extractTextFromDocument(file: File): Promise<OCRResult> {
+  const usingGoogleVision = GOOGLE_CLOUD_VISION_ENABLED && GOOGLE_CLOUD_VISION_API_KEY;
+
+  if (usingGoogleVision) {
+    try {
+      const base64Image = await fileToBase64(file);
+      const ocrText = await processWithGoogleVision(base64Image);
+      return { ocrText, source: 'google-cloud-vision' };
+    } catch (googleError) {
+      console.error('Google Vision failed for travel document:', googleError);
+    }
+  }
+
+  try {
+    const ocrText = await processWithLocalOCR(file);
+    return { ocrText, source: 'local-ocr' };
+  } catch (localError) {
+    console.error('Local OCR failed for travel document:', localError);
+  }
+
+  if (Tesseract) {
+    const imageUrl = URL.createObjectURL(file);
+    try {
+      const ocrText = await processWithTesseract(imageUrl);
+      return { ocrText, source: 'tesseract-js' };
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+    }
+  }
+
+  throw new Error('Unable to read text from this document. Please enter details manually.');
+}
+
+/**
  * Converts a File object to a base64 string
  * @param file The file to convert
  * @returns Promise resolving to the base64 string

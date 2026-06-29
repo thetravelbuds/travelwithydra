@@ -13,6 +13,9 @@ import {
   PASSPORT_FORM_FIELDS,
   type PassportScanFields,
 } from './types';
+import {
+  getPassportValidityMessages,
+} from '../../../utils/passportValidity';
 
 export interface PassportScannerPanelProps {
   title?: string;
@@ -302,6 +305,17 @@ const PassportScannerPanel: React.FC<PassportScannerPanelProps> = ({
   };
 
   const showScanner = !isEditingPassportData;
+  const passportValidity = getPassportValidityMessages(passportData?.expiryDate);
+
+  const processingOverlay = (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60">
+      <div className="text-center text-white">
+        <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
+        <p className="text-sm font-medium">Reading passport information…</p>
+        <p className="mt-1 text-xs text-white/80">This may take a few seconds</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -366,6 +380,11 @@ const PassportScannerPanel: React.FC<PassportScannerPanelProps> = ({
                 Some required fields are still empty. Click Edit to complete them manually.
               </p>
             )}
+            {passportValidity.applicationError && (
+              <p className="mt-3 rounded border border-red-200 bg-red-50 p-2 text-sm text-red-800">
+                {passportValidity.applicationError}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -382,6 +401,7 @@ const PassportScannerPanel: React.FC<PassportScannerPanelProps> = ({
                   alt="Passport scan preview"
                   className="h-full w-full object-contain"
                 />
+                {isProcessing && processingOverlay}
                 <button
                   type="button"
                   onClick={clearScan}
@@ -435,14 +455,7 @@ const PassportScannerPanel: React.FC<PassportScannerPanelProps> = ({
                   </div>
                 )}
 
-                {isProcessing && (
-                  <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60">
-                    <div className="text-center text-white">
-                      <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      <p className="text-sm font-medium">Processing Scan... Please hold still</p>
-                    </div>
-                  </div>
-                )}
+                {isProcessing && processingOverlay}
 
                 {frameError && !isProcessing && (
                   <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/70 p-4">
@@ -533,7 +546,11 @@ const PassportScannerPanel: React.FC<PassportScannerPanelProps> = ({
           <button
             type="button"
             onClick={onContinue}
-            disabled={!isPassportScanComplete(passportData) || isProcessing}
+            disabled={
+              !isPassportScanComplete(passportData) ||
+              isProcessing ||
+              Boolean(passportValidity.applicationError)
+            }
             className="rounded-lg bg-primary-600 px-6 py-2.5 text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {!isPassportScanComplete(passportData) ? 'Complete All Fields' : continueLabel}

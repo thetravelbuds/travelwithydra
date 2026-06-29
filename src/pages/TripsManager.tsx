@@ -499,7 +499,7 @@ const TripsManager: React.FC<TripsManagerProps> = ({ isLoggedIn, onLoginRequired
               Impact on Your Travel Score
             </h2>
             <p className="text-primary-600 dark:text-primary-400 mb-4">
-              Recording your trips helps boost your travelwithydra travel score! Each new country you visit adds points to your travel experience component.
+              Recording your trips helps boost your Hydra travel score! Each new country you visit adds points to your travel experience component.
             </p>
             <button 
               onClick={() => window.location.href = '/travel-score'}

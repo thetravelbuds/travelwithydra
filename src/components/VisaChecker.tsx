@@ -13,6 +13,7 @@ import { useVisaRouting } from '../hooks/useVisaRouting';
 import VisaEligibilityInput from './VisaEligibility/VisaEligibilityInput';
 import VisaRoutingSummary from './VisaEligibility/VisaRoutingSummary';
 import { buildEligibilitySearchParams } from '../engine/visaRoutingEngine';
+import { PLATFORM_NAME } from '../config/brand';
 import {
   getDestinationWaiverUiState,
   getWaiverResultMessage,
@@ -113,9 +114,9 @@ const VisaChecker: React.FC<VisaCheckerProps> = () => {
       const isSchengenApplication = isSchengenVisaApplication(visaReq.requirement, destination);
       const isUsApplication = isUsVisaApplication(visaReq.requirement, destination);
       if (isSchengenApplication) {
-        message = `Citizens of ${passportCountry} need a Schengen visa to travel to ${destinationCountry}. You can apply online through travelwithydra — we will guide you through the full Schengen application.`;
+        message = `Citizens of ${passportCountry} need a Schengen visa to travel to ${destinationCountry}. You can apply online through ${PLATFORM_NAME} — we will guide you through the full Schengen application.`;
       } else if (isUsApplication) {
-        message = `Citizens of ${passportCountry} need a U.S. visa to travel to the United States. You can complete the DS-160 application online through travelwithydra.`;
+        message = `Citizens of ${passportCountry} need a U.S. visa to travel to the United States. You can complete the DS-160 application online through ${PLATFORM_NAME}.`;
       }
 
       const canApplyOnline = canApplyOnlineForDestination(visaReq.requirement, destination);

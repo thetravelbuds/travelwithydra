@@ -35,7 +35,7 @@ const VisaCatalog: React.FC = () => {
       ];
       
       // Use your cloud name here
-      const cloudName = 'travelscore'; // Replace with your actual Cloudinary cloud name
+      const cloudName = 'drdpxs3je';
       
       // Generate visa products for sample countries
       const products = sampleCountries

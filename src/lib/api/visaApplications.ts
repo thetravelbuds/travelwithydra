@@ -2,6 +2,7 @@ import supabase from '../supabase/client';
 import { VisaApplication } from '../../types/visa';
 import authService from './auth';
 import { getCountryNameFromCode } from './visaRequirements';
+import { checkApplicationLimit } from '../../config/subscriptionLimits';
 
 export interface CreateVisaApplicationInput {
   nationalityCode: string;
@@ -149,6 +150,39 @@ function isRemoteDraft(app: VisaApplication): boolean {
   return app.status === 'pending' && app.application_data?.draft === true;
 }
 
+async function loadUserSubscriptionTier(userId: string): Promise<string> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('subscription_tier')
+    .eq('id', userId)
+    .maybeSingle();
+  return (data?.subscription_tier as string) || 'free';
+}
+
+async function fetchApplicationsForLimitCheck(userId: string): Promise<VisaApplication[]> {
+  const { data, error } = await supabase
+    .from('visa_applications')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (error && !isMissingApplicationsTable(error)) {
+    return mergeApplicationsWithLocalDrafts(userId, []);
+  }
+
+  const remote = (data ?? []).map((row) => mapApplicationRow(row as Record<string, unknown>));
+  return mergeApplicationsWithLocalDrafts(userId, remote);
+}
+
+async function assertWithinApplicationLimit(userId: string): Promise<Error | null> {
+  const tier = await loadUserSubscriptionTier(userId);
+  const applications = await fetchApplicationsForLimitCheck(userId);
+  const check = checkApplicationLimit({ tier, applications });
+  if (!check.allowed) {
+    return new Error(check.message);
+  }
+  return null;
+}
+
 const visaApplicationsService = {
   async saveDraftApplication(
     input: SaveDraftApplicationInput
@@ -237,6 +271,12 @@ const visaApplicationsService = {
     }
   },
 
+  async checkApplicationQuota(userId: string) {
+    const tier = await loadUserSubscriptionTier(userId);
+    const applications = await fetchApplicationsForLimitCheck(userId);
+    return checkApplicationLimit({ tier, applications });
+  },
+
   async createApplication(
     input: CreateVisaApplicationInput
   ): Promise<{ application: VisaApplication | null; error: Error | null }> {
@@ -244,6 +284,11 @@ const visaApplicationsService = {
       const { user, error: authError } = await authService.getCurrentUser();
       if (authError || !user) {
         return { application: null, error: authError || new Error('Not authenticated') };
+      }
+
+      const limitError = await assertWithinApplicationLimit(user.id);
+      if (limitError) {
+        return { application: null, error: limitError };
       }
 
       const destinationName = getCountryNameFromCode(input.destinationCode);
@@ -452,6 +497,25 @@ const visaApplicationsService = {
                 email: profile.email,
                 destination,
                 application_id: applicationId,
+              });
+            }
+
+            const { data: subs } = await supabase
+              .from('travel_alert_subscriptions')
+              .select('id')
+              .eq('user_id', appRow.user_id)
+              .eq('alert_type', 'application_updates')
+              .eq('enabled', true)
+              .limit(1);
+
+            if (subs?.length) {
+              await supabase.from('travel_alerts').insert({
+                user_id: appRow.user_id,
+                alert_type: 'application_updates',
+                title: `Application update: ${destination}`,
+                message: `Your visa application status is now "${status}".`,
+                application_id: applicationId,
+                destination_code: appRow.destination_code,
               });
             }
           }

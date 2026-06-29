@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef, FC, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaCamera, FaCalendarAlt, FaUsers, FaCreditCard, FaInfoCircle, FaCheckCircle, FaPlane, FaCheck, FaUpload } from 'react-icons/fa';
-import { FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa';
+import { FaCamera, FaCalendarAlt, FaUsers, FaInfoCircle, FaCheckCircle, FaPlane, FaCheck, FaUpload } from 'react-icons/fa';
 import './VisaApplicationStepper.css';
 import authService from '../../lib/api/auth';
 import visaApplicationsService from '../../lib/api/visaApplications';
 import { userProfileService } from '../../lib/api/userProfile';
 import { getVisaFeeForCountryCode } from '../../data/visaFees';
 import {
-  getDiscountedServiceFeeGbp,
+  calculateTotalServiceFeeGbp,
   getServiceFeeDiscountPercent,
 } from '../../config/visaServiceFee';
+import { PLATFORM_NAME } from '../../config/brand';
+import ServiceFeePricingLines from '../VisaProducts/ServiceFeePricingLines';
 import {
   calculateSchengenServiceTotalGbp,
   countTravelDays,
@@ -57,6 +58,15 @@ import {
   parseEligibilityFromSearchParams,
 } from '../../engine/visaRoutingEngine';
 import type { VisaRoutingResult } from '../../types/visaRouting';
+import { extractTextFromDocument } from '../../services/ocrService';
+import { parseTravelDocumentText } from '../../utils/travelDocumentParser';
+import {
+  isPassportValidForApplication,
+  isPassportValidForTravel,
+  PASSPORT_APPLICATION_BLOCK_MESSAGE,
+  PASSPORT_TRAVEL_BLOCK_MESSAGE,
+} from '../../utils/passportValidity';
+import { saveCheckoutPromoCode } from '../../utils/checkoutPromoCode';
 
 interface VisaApplicationStepperProps {
   onComplete?: (data: FormData & { draftId?: string | null }) => void;
@@ -107,6 +117,7 @@ interface FormData {
     bookingConfirmation: string | null;
   };
   flightTickets: string | null;
+  travelItinerary: string | null;
   travelers: Traveler[];
   paymentDetails: null;
   schengen: SchengenApplicationData | null;
@@ -177,10 +188,13 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [isCheckingFace, setIsCheckingFace] = useState(false);
   const [isInitializingCamera, setIsInitializingCamera] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingStep, setPendingStep] = useState<number | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isEditingPassportData, setIsEditingPassportData] = useState(false);
+  const [passportValidityError, setPassportValidityError] = useState<string | null>(null);
+  const [travelPassportError, setTravelPassportError] = useState<string | null>(null);
+  const [isExtractingTravel, setIsExtractingTravel] = useState(false);
+  const [travelExtractMessage, setTravelExtractMessage] = useState<string | null>(null);
+  const [checkoutPromoCode, setCheckoutPromoCode] = useState('');
   const [currentTravelerIndex, setCurrentTravelerIndex] = useState<number | null>(null);
   const [processingTraveler, setProcessingTraveler] = useState(false);
   const [travelerStep, setTravelerStep] = useState<number>(1);
@@ -191,6 +205,7 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
   const [addExpressProcessing, setAddExpressProcessing] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const [applicationLimitMessage, setApplicationLimitMessage] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const navigate = useNavigate();
@@ -273,6 +288,7 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
       bookingConfirmation: null
     },
     flightTickets: null,
+    travelItinerary: null,
     travelers: [],
     paymentDetails: null,
     schengen: isSchengen ? createEmptySchengenData() : null,
@@ -311,6 +327,11 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
             setCurrentStep(saved.currentStep);
           }
           setDraftId(draft.id);
+        } else {
+          const quota = await visaApplicationsService.checkApplicationQuota(user.id);
+          if (!quota.allowed) {
+            setApplicationLimitMessage(quota.message ?? null);
+          }
         }
       } catch (error) {
         console.warn('Could not load application draft:', error);
@@ -407,10 +428,13 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
     formData.travelDates.departure
   );
 
+  const travelerCount = formData.travelers.length + 1;
+
   const getSchengenPricing = () =>
     calculateSchengenServiceTotalGbp({
-      travelerCount: formData.travelers.length + 1,
+      travelerCount,
       discountPercent: getServiceFeeDiscountPercent(subscriptionTier),
+      subscriptionTier,
       addTravelInsurance: addTravelInsurance && ukResidentForInsurance,
       travelDays: travelDays || 1,
       isUkResident: ukResidentForInsurance,
@@ -418,16 +442,22 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
 
   const visaFeePerTraveler = isSchengen ? 0 : getVisaFeeForCountryCode(destinationCode);
 
-  const getServiceFee = (): number => {
-    if (isSchengen) return getSchengenPricing().serviceFee;
-    return getDiscountedServiceFeeGbp(getServiceFeeDiscountPercent(subscriptionTier));
+  const getServiceFeeBreakdown = () => {
+    if (isSchengen) return getSchengenPricing().serviceFeeBreakdown;
+    return calculateTotalServiceFeeGbp({
+      travelerCount,
+      subscriptionDiscountPercent: getServiceFeeDiscountPercent(subscriptionTier),
+      subscriptionTier,
+      destinationCode,
+    });
   };
+
+  const getServiceFee = (): number => getServiceFeeBreakdown().total;
 
   const isEvisaApplication = !isSchengen && !isUs;
 
   const getTotalFee = (): number => {
     if (isSchengen) return getSchengenPricing().total;
-    const travelerCount = formData.travelers.length + 1;
     let total = visaFeePerTraveler * travelerCount + getServiceFee();
     if (addExpressProcessing && isEvisaApplication) {
       total += EVISA_EXPRESS_PROCESSING_FEE_GBP;
@@ -516,6 +546,13 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
         }));
         return;
       } else if (travelerStep === 2) {
+        const expiry = formData.passportData?.expiryDate;
+        if (expiry && !isPassportValidForApplication(expiry)) {
+          setPassportValidityError(PASSPORT_APPLICATION_BLOCK_MESSAGE);
+          return;
+        }
+        setPassportValidityError(null);
+
         // Passport completed, return to travelers screen
         setProcessingTraveler(false);
         setCurrentTravelerIndex(null);
@@ -551,6 +588,24 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
         setUsTravelSubStep(usTravelSubStep + 1);
         return;
       }
+    }
+
+    if (currentStep === passportStep && formData.passportData?.expiryDate) {
+      if (!isPassportValidForApplication(formData.passportData.expiryDate)) {
+        setPassportValidityError(PASSPORT_APPLICATION_BLOCK_MESSAGE);
+        return;
+      }
+      setPassportValidityError(null);
+    }
+
+    if (currentStep === travelStep) {
+      const expiry = formData.passportData?.expiryDate;
+      const arrival = formData.travelDates.arrival;
+      if (expiry && arrival && !isPassportValidForTravel(expiry, arrival)) {
+        setTravelPassportError(PASSPORT_TRAVEL_BLOCK_MESSAGE);
+        return;
+      }
+      setTravelPassportError(null);
     }
     
     // Normal flow for main applicant
@@ -1022,35 +1077,81 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
   };
 
   const handleBookingUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const bookingData = reader.result as string;
-        setFormData(prev => ({
-          ...prev,
-          accommodation: {
-            ...prev.accommodation,
-            bookingConfirmation: bookingData
-          }
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
+    void handleTravelDocumentUpload(event, 'hotel');
   };
 
   const handleFlightTicketUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    void handleTravelDocumentUpload(event, 'flight');
+  };
+
+  const handleTravelItineraryUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    void handleTravelDocumentUpload(event, 'itinerary');
+  };
+
+  const handleTravelDocumentUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    kind: 'itinerary' | 'flight' | 'hotel'
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
+    event.target.value = '';
+    if (!file) return;
+
+    setIsExtractingTravel(true);
+    setTravelExtractMessage(null);
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const ticketData = reader.result as string;
-        setFormData(prev => ({
-          ...prev,
-          flightTickets: ticketData
-        }));
-      };
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Could not read file'));
       reader.readAsDataURL(file);
+    }).catch(() => null);
+
+    if (!dataUrl) {
+      setIsExtractingTravel(false);
+      setTravelExtractMessage('Could not read this file. Please try again or enter details manually.');
+      return;
+    }
+
+    try {
+      const { ocrText } = await extractTextFromDocument(file);
+      const parsed = parseTravelDocumentText(ocrText);
+
+      setFormData((prev) => ({
+        ...prev,
+        travelItinerary: kind === 'itinerary' ? dataUrl : prev.travelItinerary ?? dataUrl,
+        flightTickets: kind === 'flight' ? dataUrl : prev.flightTickets,
+        accommodation: {
+          ...prev.accommodation,
+          bookingConfirmation:
+            kind === 'hotel' ? dataUrl : prev.accommodation.bookingConfirmation,
+          name: parsed.hotelName || prev.accommodation.name,
+          address: parsed.hotelAddress || prev.accommodation.address,
+        },
+        travelDates: {
+          arrival: parsed.arrivalDate || prev.travelDates.arrival,
+          departure: parsed.departureDate || prev.travelDates.departure,
+        },
+      }));
+
+      setTravelExtractMessage(
+        'We filled in what we could from your document. Please review and edit any details before continuing.'
+      );
+    } catch {
+      setFormData((prev) => ({
+        ...prev,
+        travelItinerary: kind === 'itinerary' ? dataUrl : prev.travelItinerary,
+        flightTickets: kind === 'flight' ? dataUrl : prev.flightTickets,
+        accommodation: {
+          ...prev.accommodation,
+          bookingConfirmation:
+            kind === 'hotel' ? dataUrl : prev.accommodation.bookingConfirmation,
+        },
+      }));
+      setTravelExtractMessage(
+        'Document saved. We could not read all details automatically — please enter or edit them below.'
+      );
+    } finally {
+      setIsExtractingTravel(false);
     }
   };
 
@@ -1061,22 +1162,6 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
     };
   }, []);
 
-  // Function to confirm step transition
-  const confirmStepTransition = () => {
-    if (pendingStep !== null) {
-      setIsTransitioning(true);
-      setCurrentStep(pendingStep);
-      setTimeout(() => setIsTransitioning(false), 1000);
-      setShowConfirmModal(false);
-      setPendingStep(null);
-    }
-  };
-
-  // Function to cancel step transition
-  const cancelStepTransition = () => {
-    setShowConfirmModal(false);
-    setPendingStep(null);
-  };
 
   // Add travelers functionality
   const addTraveler = () => {
@@ -1143,18 +1228,10 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
     });
   };
 
-  // Add handleStepTransition function
   const handleStepTransition = (nextStep: number) => {
-    if (nextStep === passportStep && currentStep === photoStep && formData.photo) {
-      // For first step, ask for confirmation before proceeding
-      setPendingStep(nextStep);
-      setShowConfirmModal(true);
-    } else {
-      // For other steps, transition directly
-      setIsTransitioning(true);
-      setCurrentStep(nextStep);
-      setTimeout(() => setIsTransitioning(false), 1000);
-    }
+    setIsTransitioning(true);
+    setCurrentStep(nextStep);
+    setTimeout(() => setIsTransitioning(false), 1000);
   };
 
   // Fix function to refresh OCR data completely when reprocessing a traveler
@@ -1189,6 +1266,7 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
       if (Object.keys(errors).length > 0) return;
     }
     if (onComplete) {
+      saveCheckoutPromoCode(checkoutPromoCode);
       onComplete({
         ...formData,
         draftId,
@@ -1284,8 +1362,23 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
     // Removed incorrect setTravelers call.
   };
 
+  if (applicationLimitMessage) {
+    return (
+      <div className="mx-auto max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-amber-900">
+        <p className="text-base font-medium">{applicationLimitMessage}</p>
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard')}
+          className="mt-4 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+        >
+          Go to Dashboard
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-7xl mx-auto px-4">
+    <div className="visa-application-stepper max-w-7xl mx-auto px-4">
       <div className="mb-4 flex flex-col gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-gray-600">Your progress is saved automatically. You can also save and return later.</p>
         <div className="flex flex-wrap items-center gap-2">
@@ -1723,6 +1816,86 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
                     </>
                   ) : (
                   <>
+                  <div className="rounded-lg border border-dashed border-primary-200 bg-primary-50/40 p-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Upload travel documents (optional)</h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Upload an itinerary, flight ticket, or hotel reservation and we will try to fill in dates and
+                      accommodation. You can still edit every field manually before continuing.
+                    </p>
+
+                    {isExtractingTravel && (
+                      <div className="mt-4 flex items-center gap-3 rounded-lg border border-primary-100 bg-white p-4">
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Reading your travel document…</p>
+                          <p className="text-xs text-gray-500">Extracting dates and accommodation details</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {travelExtractMessage && !isExtractingTravel && (
+                      <p className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                        {travelExtractMessage}
+                      </p>
+                    )}
+
+                    <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                      <label className="flex cursor-pointer flex-col items-center rounded-lg border border-gray-300 bg-white p-4 hover:border-primary-500">
+                        <FaUpload className="mb-2 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700">Travel itinerary</span>
+                        <span className="text-xs text-gray-500">PDF, JPG, PNG</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={handleTravelItineraryUpload}
+                          disabled={isExtractingTravel}
+                          className="hidden"
+                        />
+                        {formData.travelItinerary && (
+                          <span className="mt-2 flex items-center text-xs text-green-600">
+                            <FaCheckCircle className="mr-1" /> Uploaded
+                          </span>
+                        )}
+                      </label>
+
+                      <label className="flex cursor-pointer flex-col items-center rounded-lg border border-gray-300 bg-white p-4 hover:border-primary-500">
+                        <FaPlane className="mb-2 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700">Flight ticket</span>
+                        <span className="text-xs text-gray-500">PDF, JPG, PNG</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={handleFlightTicketUpload}
+                          disabled={isExtractingTravel}
+                          className="hidden"
+                        />
+                        {formData.flightTickets && (
+                          <span className="mt-2 flex items-center text-xs text-green-600">
+                            <FaCheckCircle className="mr-1" /> Uploaded
+                          </span>
+                        )}
+                      </label>
+
+                      <label className="flex cursor-pointer flex-col items-center rounded-lg border border-gray-300 bg-white p-4 hover:border-primary-500">
+                        <FaInfoCircle className="mb-2 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700">Hotel reservation</span>
+                        <span className="text-xs text-gray-500">PDF, JPG, PNG</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={handleBookingUpload}
+                          disabled={isExtractingTravel}
+                          className="hidden"
+                        />
+                        {formData.accommodation.bookingConfirmation && (
+                          <span className="mt-2 flex items-center text-xs text-green-600">
+                            <FaCheckCircle className="mr-1" /> Uploaded
+                          </span>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1752,6 +1925,12 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
                       />
                     </div>
                   </div>
+
+                  {travelPassportError && (
+                    <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                      {travelPassportError}
+                    </p>
+                  )}
 
                   <div className="space-y-4">
                     {isSchengen && formData.schengen ? (
@@ -1856,47 +2035,9 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
                     )}
                     
                     {!isFieldWaived(waivedFormFields, 'travel.bookingConfirmation') && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">Supporting Documents (Optional)</h3>
-                      
-                      <div className="border border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-500 transition-colors">
-                        <label className="flex flex-col items-center cursor-pointer">
-                          <FaInfoCircle className="w-6 h-6 text-gray-400 mb-2" />
-                          <span className="text-sm text-gray-600 mb-2">Upload Accommodation Booking Confirmation</span>
-                          <span className="text-xs text-gray-500">(PDF, JPG, PNG)</span>
-                          <input
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={handleBookingUpload}
-                            className="hidden"
-                          />
-                          {formData.accommodation.bookingConfirmation && (
-                            <div className="mt-2 flex items-center text-sm text-green-600">
-                              <FaCheckCircle className="mr-1" /> Document uploaded
-                            </div>
-                          )}
-                        </label>
-                      </div>
-                      
-                      <div className="border border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-500 transition-colors">
-                        <label className="flex flex-col items-center cursor-pointer">
-                          <FaInfoCircle className="w-6 h-6 text-gray-400 mb-2" />
-                          <span className="text-sm text-gray-600 mb-2">Upload Flight Tickets</span>
-                          <span className="text-xs text-gray-500">(PDF, JPG, PNG)</span>
-                          <input
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={handleFlightTicketUpload}
-                            className="hidden"
-                          />
-                          {formData.flightTickets && (
-                            <div className="mt-2 flex items-center text-sm text-green-600">
-                              <FaCheckCircle className="mr-1" /> Document uploaded
-                            </div>
-                          )}
-                        </label>
-                      </div>
-                    </div>
+                    <p className="text-sm text-gray-500">
+                      You can also attach supporting documents above using the upload section at the top of this step.
+                    </p>
                     )}
                   </div>
                   </>
@@ -2122,8 +2263,8 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
                     <h3 className="text-xl font-bold mb-4 text-gray-900">Payment Details</h3>
                     <p className="mb-4 text-sm text-gray-500">
                       {isSchengen
-                        ? 'travelwithydra fees only. Embassy and VFS fees are paid separately at your appointment centre.'
-                        : 'Government visa fee plus travelwithydra service fee.'}
+                        ? `${PLATFORM_NAME} fees only. Embassy and VFS fees are paid separately at your appointment centre.`
+                        : `Government visa fee plus ${PLATFORM_NAME} service fee.`}
                     </p>
                     <div className="space-y-4">
                       {isSchengen ? (
@@ -2136,16 +2277,11 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
                               £{getSchengenPricing().appointmentFee.toFixed(2)}
                             </span>
                           </div>
-                          <div className="flex justify-between items-center pb-3">
-                            <div>
-                              <span className="text-gray-700 text-lg">travelwithydra visa service</span>
-                              {subscriptionTier !== 'free' && (
-                                <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
-                                  {getServiceFeeDiscountPercent(subscriptionTier)}% off
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-lg font-semibold">£{getSchengenPricing().serviceFee.toFixed(2)}</span>
+                          <div className="pb-3">
+                            <ServiceFeePricingLines
+                              breakdown={getServiceFeeBreakdown()}
+                              currencySymbol="£"
+                            />
                           </div>
                           {getSchengenPricing().travelInsurance > 0 && (
                             <div className="flex justify-between items-center pb-3">
@@ -2162,16 +2298,11 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
                             <span className="text-gray-700 text-lg">Visa Fee ({formData.travelers.length + 1} travelers)</span>
                             <span className="text-lg font-semibold">£{(visaFeePerTraveler * (formData.travelers.length + 1)).toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between items-center pb-3">
-                            <div>
-                              <span className="text-gray-700 text-lg">Service Fee</span>
-                              {subscriptionTier !== 'free' && (
-                                <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
-                                  {getServiceFeeDiscountPercent(subscriptionTier)}% off
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-lg font-semibold">£{getServiceFee().toFixed(2)}</span>
+                          <div className="pb-3">
+                            <ServiceFeePricingLines
+                              breakdown={getServiceFeeBreakdown()}
+                              currencySymbol="£"
+                            />
                           </div>
                           {addExpressProcessing && isEvisaApplication && (
                             <div className="flex justify-between items-center pb-3">
@@ -2192,70 +2323,39 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
 
                   <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                     <div className="bg-gradient-to-r from-gray-100 to-gray-50 p-4 border-b border-gray-200">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-gray-900">Card Information</h3>
-                        <div className="flex space-x-2">
-                          <FaCcVisa className="text-blue-600 text-2xl" />
-                          <FaCcMastercard className="text-orange-600 text-2xl" />
-                          <FaCcAmex className="text-blue-500 text-2xl" />
-                        </div>
-                      </div>
+                      <h3 className="text-xl font-bold text-gray-900">Discount code</h3>
                     </div>
                     <div className="p-6 space-y-4">
+                      <p className="text-sm text-gray-600">
+                        Have a promo code? Enter it here. It will also be applied on the secure payment page.
+                      </p>
                       <div>
-                        <label className="block text-base font-medium text-gray-700 mb-2">
-                          Card Number
+                        <label htmlFor="checkout-promo-code" className="block text-base font-medium text-gray-700 mb-2">
+                          Promo / discount code
                         </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="1234 5678 9012 3456"
-                            className="w-full p-4 border border-gray-300 rounded-lg text-lg pr-10 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                          />
-                          <FaCreditCard className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-base font-medium text-gray-700 mb-2">
-                            Expiry Date
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="MM/YY"
-                            className="w-full p-4 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-base font-medium text-gray-700 mb-2">
-                            CVV
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="123"
-                              className="w-full p-4 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                            />
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                              <FaInfoCircle className="text-gray-400 cursor-help" title="3-digit security code on the back of your card" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-2">
-                        <label className="flex items-center">
-                          <input type="checkbox" className="h-5 w-5 text-primary-600 rounded" />
-                          <span className="ml-2 text-gray-700">Save this card for future payments</span>
-                        </label>
+                        <input
+                          id="checkout-promo-code"
+                          type="text"
+                          value={checkoutPromoCode}
+                          onChange={(e) => setCheckoutPromoCode(e.target.value.toUpperCase())}
+                          placeholder="Enter code"
+                          className="w-full p-4 border border-gray-300 rounded-lg text-lg uppercase focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        />
                       </div>
                     </div>
-                    <div className="bg-gray-50 p-4 border-t border-gray-200 flex items-center">
-                      <div className="bg-green-100 p-2 rounded-full mr-3">
+                  </div>
+
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-full bg-green-100 p-2">
                         <FaCheckCircle className="text-green-600" />
                       </div>
-                      <span className="text-sm text-gray-600">Your payment information is encrypted and secure</span>
+                      <div>
+                        <p className="font-medium text-gray-900">Secure payment on the next step</p>
+                        <p className="text-sm text-gray-600">
+                          Card details are entered on our Stripe-powered payment page after you submit this application.
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -2271,7 +2371,7 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
                       onClick={handleComplete}
                       className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-lg font-semibold flex items-center"
                     >
-                      <span>Complete Payment</span>
+                      <span>Continue to Secure Payment</span>
                       <FaCheckCircle className="ml-2" />
                     </button>
                   </div>
@@ -2321,30 +2421,7 @@ const VisaApplicationStepper: React.FC<VisaApplicationStepperProps> = ({
         </div>
       </div>
 
-      {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Confirm Step Completion</h3>
-            <p className="mb-6">Are you sure you want to proceed to the next step? You can always come back to edit this information later.</p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={cancelStepTransition}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmStepTransition}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
+
       {/* Always render video element for photo step fallback */}
       <div style={{ display: 'none' }}>
         <video 

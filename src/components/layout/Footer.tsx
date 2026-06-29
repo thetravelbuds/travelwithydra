@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { BRAND_NAME, BRAND_TAGLINE } from '../../config/brand';
 import BrandLogo from '../brand/BrandLogo';
+import PopularEvisaLinks from '../seo/PopularEvisaLinks';
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -12,11 +13,11 @@ export const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-50 border-t border-gray-200 dark:bg-gray-900 dark:border-gray-800">
       <div className="container mx-auto px-4 py-10 sm:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10">
           {/* Logo + Description */}
           <div className="col-span-1 sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <BrandLogo size="md" adaptToDarkMode />
+              <BrandLogo size="md" variant="auto" />
               <span className="text-lg font-bold text-gray-900 dark:text-white">{BRAND_NAME}</span>
             </div>
             <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed max-w-sm">
@@ -51,6 +52,10 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
             </ul>
+          </div>
+
+          <div className="col-span-1">
+            <PopularEvisaLinks title="Popular eVisas" compact />
           </div>
 
           {/* Blogs Section */}

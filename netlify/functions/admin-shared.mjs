@@ -57,6 +57,70 @@ export function getCompanyEmail() {
   );
 }
 
+export function getSiteUrl() {
+  return (
+    process.env.URL ||
+    process.env.DEPLOY_PRIME_URL ||
+    process.env.VITE_SITE_URL ||
+    'https://travelwithydra.com'
+  );
+}
+
+/** application | promotional | transactional */
+export function buildEmailFooter(unsubscribeToken, { promotional = false } = {}) {
+  const siteUrl = getSiteUrl();
+  const companyEmail = getCompanyEmail();
+  const prefsUrl = unsubscribeToken
+    ? `${siteUrl}/email-preferences?token=${unsubscribeToken}`
+    : `${siteUrl}/dashboard`;
+
+  const promoUnsub =
+    promotional && unsubscribeToken
+      ? ` · <a href="${siteUrl}/email-preferences?token=${unsubscribeToken}&optout=promotional" style="color:#0d9488">Unsubscribe from promotions</a>`
+      : '';
+
+  return `<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;line-height:1.6">
+    <p style="margin:0 0 8px">Hydra · <a href="mailto:${companyEmail}" style="color:#0d9488">${companyEmail}</a></p>
+    <p style="margin:0"><a href="${prefsUrl}" style="color:#0d9488">Manage email preferences</a>${promoUnsub}</p>
+  </div>`;
+}
+
+export async function getRecipientEmailPrefs(supabase, recipientUserId) {
+  if (!recipientUserId) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(
+      'application_emails_enabled, promotional_emails_enabled, email_unsubscribe_token'
+    )
+    .eq('id', recipientUserId)
+    .maybeSingle();
+
+  if (error && error.code === '42703') return null;
+  if (error) throw error;
+  return data;
+}
+
+export async function shouldSendEmail(supabase, recipientUserId, category) {
+  if (!recipientUserId) {
+    return { send: true, token: null };
+  }
+
+  const prefs = await getRecipientEmailPrefs(supabase, recipientUserId);
+  if (!prefs) {
+    return { send: true, token: null };
+  }
+
+  if (category === 'promotional' && prefs.promotional_emails_enabled === false) {
+    return { send: false, token: prefs.email_unsubscribe_token };
+  }
+
+  if (category === 'application' && prefs.application_emails_enabled === false) {
+    return { send: false, token: prefs.email_unsubscribe_token };
+  }
+
+  return { send: true, token: prefs.email_unsubscribe_token };
+}
+
 export function renderTemplate(template, variables = {}) {
   const replace = (text) =>
     String(text ?? '').replace(/\{\{(\w+)\}\}/g, (_, key) => {
@@ -93,15 +157,25 @@ export async function sendRenderedEmail({
   recipientUserId = null,
   sentBy = 'system',
   adminId = null,
+  emailCategory = 'transactional',
 }) {
+  const { send, token } = await shouldSendEmail(supabase, recipientUserId, emailCategory);
+  if (!send) {
+    return { skipped: true, reason: 'recipient_opted_out' };
+  }
+
+  const footer = buildEmailFooter(token, { promotional: emailCategory === 'promotional' });
+  const htmlWithFooter = `${html}${footer}`;
+
   const resend = getResend();
   const fromEmail = getFromEmail();
 
   const result = await resend.emails.send({
-    from: `travelwithydra <${fromEmail}>`,
+    from: `Hydra <${fromEmail}>`,
+    reply_to: getCompanyEmail(),
     to,
     subject,
-    html,
+    html: htmlWithFooter,
   });
 
   if (supabase) {
@@ -127,6 +201,7 @@ export async function sendTemplateEmail({
   recipientUserId = null,
   sentBy = 'system',
   adminId = null,
+  emailCategory = 'transactional',
 }) {
   const template = await getTemplate(supabase, slug);
   if (!template) {
@@ -143,6 +218,7 @@ export async function sendTemplateEmail({
     recipientUserId,
     sentBy,
     adminId,
+    emailCategory,
   });
 }
 

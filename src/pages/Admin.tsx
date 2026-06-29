@@ -10,10 +10,13 @@ import AdminSiteSettings from '../components/Admin/AdminSiteSettings';
 import AdminCountryAccess from '../components/Admin/AdminCountryAccess';
 import AdminMembers from '../components/Admin/AdminMembers';
 import AdminEmailCenter from '../components/Admin/AdminEmailCenter';
+import AdminPromoCodes from '../components/Admin/AdminPromoCodes';
+import AdminEvisaFees from '../components/Admin/AdminEvisaFees';
+import AdminDbSetupNotice from '../components/Admin/AdminDbSetupNotice';
 import { VisaApplication } from '../types/visa';
 import { isIncompleteDraft } from '../utils/visaApplicationProgress';
 
-type AdminTab = 'applications' | 'blogs' | 'statistics' | 'settings' | 'countryAccess' | 'members' | 'emails';
+type AdminTab = 'applications' | 'blogs' | 'statistics' | 'settings' | 'countryAccess' | 'members' | 'emails' | 'promoCodes' | 'evisaFees';
 
 interface BlogFormState {
   title: string;
@@ -297,7 +300,7 @@ const AdminDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-teal-700 text-white p-4">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">travelwithydra Admin</h1>
+          <h1 className="text-2xl font-bold">Hydra Admin</h1>
           <nav>
             <Link to="/dashboard" className="text-white hover:text-teal-200 ml-4">
               Back to Dashboard
@@ -351,6 +354,18 @@ const AdminDashboard: React.FC = () => {
               onClick={() => setActiveTab('countryAccess')}
             >
               Country Access
+            </button>
+            <button
+              className={`py-2 px-4 font-medium ${activeTab === 'promoCodes' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-teal-500'}`}
+              onClick={() => setActiveTab('promoCodes')}
+            >
+              Promo Codes
+            </button>
+            <button
+              className={`py-2 px-4 font-medium ${activeTab === 'evisaFees' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-teal-500'}`}
+              onClick={() => setActiveTab('evisaFees')}
+            >
+              eVisa Fees
             </button>
           </div>
         </div>
@@ -735,6 +750,19 @@ const AdminDashboard: React.FC = () => {
         {activeTab === 'members' && <AdminMembers />}
 
         {activeTab === 'emails' && <AdminEmailCenter />}
+
+        {activeTab === 'promoCodes' && (
+          <>
+            <AdminDbSetupNotice />
+            <AdminPromoCodes />
+          </>
+        )}
+        {activeTab === 'evisaFees' && (
+          <>
+            <AdminDbSetupNotice />
+            <AdminEvisaFees />
+          </>
+        )}
       </div>
     </div>
   );

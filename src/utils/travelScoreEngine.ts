@@ -85,7 +85,7 @@ function resolveCountryName(code: string): string {
   return countryCodeMap[code] ?? ALL_COUNTRIES.find((c) => c.code.toUpperCase() === code)?.name ?? code;
 }
 
-export { resolveCountryName };
+export { resolveCountryName, normalizeCode };
 
 function resolveNationalityName(nationality: string): string {
   const code = normalizeCode(nationality);

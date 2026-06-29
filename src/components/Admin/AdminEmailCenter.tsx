@@ -230,7 +230,7 @@ const AdminEmailCenter: React.FC = () => {
       {activeTab === 'inbox' && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-lg bg-white p-6 shadow-md">
-            <h3 className="mb-4 text-lg font-semibold">Messages to travelwithydra</h3>
+            <h3 className="mb-4 text-lg font-semibold">Messages to Hydra</h3>
             <div className="max-h-[520px] space-y-2 overflow-y-auto">
               {inbound.map((item) => (
                 <button
@@ -345,6 +345,7 @@ const AdminEmailCenter: React.FC = () => {
             </div>
             <p className="mb-2 text-xs text-gray-500">
               Select specific users below, or leave none selected to email everyone matching filters.
+              Users who opted out of promotional emails are skipped automatically.
             </p>
             <div className="max-h-72 space-y-1 overflow-y-auto rounded border border-gray-200 p-2">
               {members.map((member) => (

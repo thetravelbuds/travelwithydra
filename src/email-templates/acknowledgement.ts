@@ -4,7 +4,7 @@ export const acknowledgementEmailTemplate = (name: string = 'there') => `
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Thanks for contacting travelwithydra</title>
+  <title>Thanks for contacting Hydra</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -35,15 +35,15 @@ export const acknowledgementEmailTemplate = (name: string = 'there') => `
   </style>
 </head>
 <body>
-  <h2>Thanks for reaching out to travelwithydra!</h2>
+  <h2>Thanks for reaching out to Hydra!</h2>
   <p>Hello ${name},</p>
   <p>Your message has been received, and our team is already reviewing it.</p>
   <p>You can expect a response within <strong>24–48 hours</strong>. If your inquiry is urgent, feel free to mention that in a follow-up.</p>
   <p>In the meantime, explore our resources or track your visa status directly from your dashboard.</p>
-  <p><strong>We're here to help,</strong><br>The travelwithydra Support Team</p>
+  <p><strong>We're here to help,</strong><br>The Hydra Support Team</p>
   
   <div class="footer">
-    <p>© ${new Date().getFullYear()} travelwithydra. All rights reserved.</p>
+    <p>© ${new Date().getFullYear()} Hydra. All rights reserved.</p>
     <p>This is an automated response to your inquiry. Please do not reply to this email.</p>
   </div>
 </body>

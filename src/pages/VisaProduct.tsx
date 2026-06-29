@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import VisaProductPage from '../components/VisaProducts/VisaProductPage';
 import { generateVisaProductForCountry } from '../utils/visaProductGenerator';
 import { ALL_COUNTRIES } from '../utils/countries';
 import { getCountryNameFromCode } from '../lib/api/visaRequirements';
 import type { VisaProduct } from '../types/visaProduct';
+import SeoHead from '../components/seo/SeoHead';
+import { getVisaPageSeo } from '../config/seo';
+import { buildBreadcrumbJsonLd, buildVisaServiceJsonLd } from '../utils/visaSeoJsonLd';
 
 // Cloudinary config from index.js
 const CLOUDINARY_CONFIG = {
@@ -89,11 +92,41 @@ const VisaProduct: React.FC = () => {
     };
   }, [countryCode, loadProductData]);
 
+  const seo = useMemo(() => {
+    if (!countryCode || !countryName) return null;
+    return getVisaPageSeo(countryCode, countryName);
+  }, [countryCode, countryName]);
+
+  const jsonLd = useMemo(() => {
+    if (!countryCode || !countryName) return undefined;
+    return [
+      buildVisaServiceJsonLd(countryCode, countryName),
+      buildBreadcrumbJsonLd([
+        { name: 'Home', path: '/' },
+        { name: 'eVisa Destinations', path: '/visa/browse' },
+        { name: `${countryName} eVisa`, path: `/visa/${countryCode.toLowerCase()}` },
+      ]),
+    ];
+  }, [countryCode, countryName]);
+
   if (loading) {
+    const earlyName = countryCode ? getCountryNameFromCode(countryCode) : null;
+    const earlySeo =
+      countryCode && earlyName ? getVisaPageSeo(countryCode, earlyName) : null;
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
+      <>
+        {earlySeo && (
+          <SeoHead
+            title={earlySeo.title}
+            description={earlySeo.description}
+            keywords={earlySeo.keywords}
+            canonicalPath={earlySeo.canonicalPath}
+          />
+        )}
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+        </div>
+      </>
     );
   }
 
@@ -116,6 +149,15 @@ const VisaProduct: React.FC = () => {
 
   return (
     <div>
+      {seo && (
+        <SeoHead
+          title={seo.title}
+          description={seo.description}
+          keywords={seo.keywords}
+          canonicalPath={seo.canonicalPath}
+          jsonLd={jsonLd}
+        />
+      )}
       {/* Country Selector */}
       <div className="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

@@ -68,11 +68,11 @@ export function getTurkeyWaiverContent(passportCountryName = 'your country') {
         body: 'Even with the e-Visa unlocked, you must hold a return ticket, a hotel reservation, and proof of financial sufficiency (customarily estimated at $50 USD per day of stay).',
       },
     ],
-    howToHeading: 'How to Apply Through travelwithydra',
+    howToHeading: 'How to Apply Through Hydra',
     steps: [
       `Prepare scans of your ${passportCountryName} passport and your physical supporting visa or residence permit.`,
       'Complete the online application accurately — details must match your supporting document exactly.',
-      'Pay the government visa fee and travelwithydra service fee, then submit for processing.',
+      'Pay the government visa fee and Hydra service fee, then submit for processing.',
       'Receive your Turkish e-Visa approval electronically before you travel.',
     ],
   };

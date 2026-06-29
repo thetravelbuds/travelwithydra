@@ -25,7 +25,7 @@ export function getAiAssistantLimits(tier?: string | null): AiAssistantLimits {
     case 'premium':
       return { hasAccess: true, dailyLimit: 25, planLabel: 'Premium' };
     default:
-      return { hasAccess: true, dailyLimit: 25, planLabel: 'Free' };
+      return { hasAccess: true, dailyLimit: 25, planLabel: 'Limited' };
   }
 }
 

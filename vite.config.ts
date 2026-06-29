@@ -12,7 +12,13 @@ export default defineConfig({
   envPrefix: ['VITE_', 'NEXT_PUBLIC_', 'REACT_APP_'],
   server: {
     port: 5173,
-    host: true
+    host: true,
+    proxy: {
+      '/.netlify/functions': {
+        target: 'http://127.0.0.1:9999',
+        changeOrigin: true,
+      },
+    },
   },
   resolve: {
     alias: {

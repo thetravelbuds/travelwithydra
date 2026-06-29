@@ -5,10 +5,16 @@ import { useWindowSize } from '../hooks/useWindowSize';
 import VisaChecker from '../components/VisaChecker';
 import ChatBubble from '../components/AIAssistant/ChatBubble';
 import { AI_ASSISTANT_NAME, BRAND_NAME } from '../config/brand';
+import SeoHead from '../components/seo/SeoHead';
+import PopularEvisaLinks from '../components/seo/PopularEvisaLinks';
+import { DEFAULT_SEO } from '../config/seo';
+import { buildWebsiteJsonLd } from '../utils/visaSeoJsonLd';
 
 interface LandingProps {
   onGetStarted: () => void;
+  onCheckVisaEligibility: () => void;
   onExploreFeatures: () => void;
+  onOpenWorldMap: () => void;
   onApplyEVisa: (nationalityCode: string, destinationCode: string) => void;
   onPricingSubscribe: (plan: string, cycle: 'monthly' | 'annual' | 'lifetime') => void;
   isLoggedIn: boolean;
@@ -16,8 +22,10 @@ interface LandingProps {
 }
 
 const Landing: React.FC<LandingProps> = ({ 
-  onGetStarted, 
-  onExploreFeatures, 
+  onGetStarted,
+  onCheckVisaEligibility,
+  onExploreFeatures,
+  onOpenWorldMap,
   onApplyEVisa,
   onPricingSubscribe,
   isLoggedIn,
@@ -28,6 +36,13 @@ const Landing: React.FC<LandingProps> = ({
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
+      <SeoHead
+        title={DEFAULT_SEO.title}
+        description={DEFAULT_SEO.description}
+        keywords={DEFAULT_SEO.keywords}
+        canonicalPath="/"
+        jsonLd={buildWebsiteJsonLd()}
+      />
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50/10 to-blue-100/5 dark:from-blue-950/10 dark:to-indigo-900/5"></div>
@@ -39,23 +54,20 @@ const Landing: React.FC<LandingProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-4">
-                  <span className="text-primary-600 dark:text-primary-500">{BRAND_NAME}</span>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+                  Travel Smarter
                 </h1>
-                <p className="text-lg md:text-xl text-gray-500 dark:text-gray-400 mb-2">
-                  Your intelligent travel platform
-                </p>
                 <p className="text-xl text-gray-700 dark:text-gray-300 mb-8">
-                  Meet <span className="font-semibold text-primary-600 dark:text-primary-500">{AI_ASSISTANT_NAME}</span> — your AI travel companion who helps with visa checks, travel scores, eVisa applications, and everything you need to travel smarter.
+                  Meet <span className="font-semibold text-primary-600 dark:text-primary-500">{AI_ASSISTANT_NAME}</span> — your AI travel companion for everything related to your travel life.
                 </p>
                 <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                   <motion.button
-                    onClick={onGetStarted}
+                    onClick={onCheckVisaEligibility}
                     className="bg-primary-600 hover:bg-primary-700 text-white py-3 px-8 rounded-md text-lg font-semibold transition-colors"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    Check Your Travel Score
+                    Check Visa Eligibility
                   </motion.button>
                   <motion.button
                     onClick={onExploreFeatures}
@@ -146,8 +158,12 @@ const Landing: React.FC<LandingProps> = ({
               <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Explore visa requirements for every country with our beautiful 3D globe visualization.
               </p>
-              <button onClick={onExploreFeatures} className="text-primary-600 dark:text-primary-500 hover:underline font-medium text-hover">
-                Learn more →
+              <button
+                type="button"
+                onClick={onOpenWorldMap}
+                className="text-primary-600 dark:text-primary-500 hover:underline font-medium text-hover"
+              >
+                Explore the map →
               </button>
             </div>
           </motion.div>
@@ -179,7 +195,10 @@ const Landing: React.FC<LandingProps> = ({
         </div>
       </div>
 
-      
+      {/* Popular eVisa destinations — internal links for SEO */}
+      <div className="container mx-auto px-4 py-16 border-t border-gray-200 dark:border-gray-800">
+        <PopularEvisaLinks />
+      </div>
 
       {/* Visa Requirement Checker Section */}
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-800 dark:to-primary-900">

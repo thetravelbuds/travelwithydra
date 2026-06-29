@@ -1,4 +1,5 @@
 import React from 'react';
+import { PLATFORM_NAME } from '../config/brand';
 import LegalPageLayout from '../components/legal/LegalPageLayout';
 import { getCompanyEmail } from '../config/companyContact';
 
@@ -8,8 +9,8 @@ const TermsOfService: React.FC = () => {
   return (
   <LegalPageLayout title="Terms of Service">
     <p>
-      Welcome to travelwithydra! These terms and conditions outline the rules and regulations for the use
-      of travelwithydra&apos;s Website, located at{' '}
+      Welcome to {PLATFORM_NAME}! These terms and conditions outline the rules and regulations for the use
+      of {PLATFORM_NAME}&apos;s Website, located at{' '}
       <a href="https://travelwithydra.com" className="text-primary-600 hover:underline">
         travelwithydra.com
       </a>
@@ -21,8 +22,8 @@ const TermsOfService: React.FC = () => {
         Intellectual Property
       </h2>
       <p>
-        Unless otherwise stated, travelwithydra and/or its licensors own the intellectual property rights
-        for all material on travelwithydra. All intellectual property rights are reserved.
+        Unless otherwise stated, {PLATFORM_NAME} and/or its licensors own the intellectual property rights
+        for all material on {PLATFORM_NAME}. All intellectual property rights are reserved.
       </p>
     </section>
 
@@ -52,7 +53,7 @@ const TermsOfService: React.FC = () => {
         Limitation of Liability
       </h2>
       <p>
-        In no event shall travelwithydra, nor any of its officers or employees, be held liable for
+        In no event shall {PLATFORM_NAME}, nor any of its officers or employees, be held liable for
         anything arising out of or in any way connected with your use of this website.
       </p>
     </section>
