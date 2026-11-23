@@ -52,3 +52,39 @@ export function buildBreadcrumbJsonLd(
     })),
   };
 }
+
+export function buildFaqPageJsonLd(
+  faqs: Array<{ question: string; answer: string }>
+) {
+  if (!faqs.length) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
+export function buildHowToJsonLd(
+  countryName: string,
+  steps: Array<{ title: string; description: string }>
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: `How to apply for a ${countryName} eVisa online`,
+    description: `Step-by-step guide to applying for a ${countryName} eVisa with ${PLATFORM_NAME}.`,
+    step: steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step.title,
+      text: step.description,
+    })),
+  };
+}

@@ -34,4 +34,10 @@ export interface VisaGuideContent {
   stepBadgeClass?: string;
   /** Optional common refusal factors shown below the main guide */
   rejectionReasons?: VisaGuideDocument[];
+  /** Optional SEO highlight block shown above the process section */
+  seoHighlight?: {
+    title: string;
+    body: string;
+    bullets?: string[];
+  };
 }

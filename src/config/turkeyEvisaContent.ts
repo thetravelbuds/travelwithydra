@@ -18,9 +18,19 @@ export const TURKEY_EVISA_QUICK_FACTS = {
 } as const;
 
 export const TURKEY_VISA_GUIDE: VisaGuideContent = {
-  processTitle: 'How to get your Turkey e-Visa',
+  processTitle: 'How to get your Turkey eVisa',
   processSubtitle: `${TURKEY_EVISA_QUICK_FACTS.applicationChannel}. ${TURKEY_EVISA_QUICK_FACTS.applyBeforeTravel}.`,
   stepBadgeClass: 'bg-primary-600',
+  seoHighlight: {
+    title: 'Turkey eVisa requirements at a glance',
+    body: `The Turkey eVisa is an electronic travel authorisation for eligible nationalities. Stay length is typically up to 30 or 90 days depending on your passport, with validity of ${TURKEY_EVISA_QUICK_FACTS.visaValidity}. ${TURKEY_EVISA_QUICK_FACTS.applyBeforeTravel}. Some nationalities need a supporting US, UK, Schengen, or Ireland visa or residence permit that is still valid on arrival.`,
+    bullets: [
+      'Fully online Turkey eVisa application — no embassy visit for eligible travellers',
+      'Check supporting visa / residence permit rules before you apply',
+      'Passport scan and document review before government submission',
+      'Approved Turkey eVisa delivered by email — print a copy for immigration',
+    ],
+  },
   applicationSteps: [
     {
       title: 'Check your eligibility',

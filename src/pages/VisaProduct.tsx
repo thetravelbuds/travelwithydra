@@ -7,7 +7,14 @@ import { getCountryNameFromCode } from '../lib/api/visaRequirements';
 import type { VisaProduct } from '../types/visaProduct';
 import SeoHead from '../components/seo/SeoHead';
 import { getVisaPageSeo } from '../config/seo';
-import { buildBreadcrumbJsonLd, buildVisaServiceJsonLd } from '../utils/visaSeoJsonLd';
+import {
+  buildBreadcrumbJsonLd,
+  buildFaqPageJsonLd,
+  buildHowToJsonLd,
+  buildVisaServiceJsonLd,
+} from '../utils/visaSeoJsonLd';
+import { getMoroccoEvisaFaqs, MOROCCO_APPLICATION_STEPS } from '../config/moroccoEvisaContent';
+import { TURKEY_VISA_GUIDE } from '../config/turkeyEvisaContent';
 
 // Cloudinary config from index.js
 const CLOUDINARY_CONFIG = {
@@ -99,14 +106,46 @@ const VisaProduct: React.FC = () => {
 
   const jsonLd = useMemo(() => {
     if (!countryCode || !countryName) return undefined;
-    return [
+    const code = countryCode.toLowerCase();
+    const blocks: Record<string, unknown>[] = [
       buildVisaServiceJsonLd(countryCode, countryName),
       buildBreadcrumbJsonLd([
         { name: 'Home', path: '/' },
         { name: 'eVisa Destinations', path: '/visa/browse' },
-        { name: `${countryName} eVisa`, path: `/visa/${countryCode.toLowerCase()}` },
+        { name: `${countryName} eVisa`, path: `/visa/${code}` },
       ]),
     ];
+
+    if (code === 'ma') {
+      const faqLd = buildFaqPageJsonLd(getMoroccoEvisaFaqs());
+      if (faqLd) blocks.push(faqLd);
+      blocks.push(
+        buildHowToJsonLd(
+          'Morocco',
+          MOROCCO_APPLICATION_STEPS.map((s) => ({
+            title: s.title,
+            description: s.description,
+          }))
+        )
+      );
+    }
+
+    if (code === 'tr') {
+      const turkeyFaqs = TURKEY_VISA_GUIDE.faqCategories.flatMap((c) => c.items);
+      const faqLd = buildFaqPageJsonLd(turkeyFaqs);
+      if (faqLd) blocks.push(faqLd);
+      blocks.push(
+        buildHowToJsonLd(
+          'Turkey',
+          TURKEY_VISA_GUIDE.applicationSteps.map((s) => ({
+            title: s.title,
+            description: s.description,
+          }))
+        )
+      );
+    }
+
+    return blocks;
   }, [countryCode, countryName]);
 
   if (loading) {

@@ -1,4 +1,16 @@
 User-agent: *
 Allow: /
 
+# Prefer canonical /visa/{cc} URLs (legacy /en/* paths 301 to these).
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /login
+Disallow: /signup
+Disallow: /checkout
+Disallow: /payment
+Disallow: /visa/apply/
+Disallow: /visarequirements1.json
+Disallow: /visarequirements2.json
+Disallow: /visarequirements3.json
+
 Sitemap: https://travelwithydra.com/sitemap.xml

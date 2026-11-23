@@ -10,6 +10,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const SITE_URL = 'https://travelwithydra.com';
 
+/** Morocco & Turkey first — highest commercial intent. */
+const TOP_EVISA = ['ma', 'tr'];
+
 const PRIORITY_EVISA = [
   'ma', 'tr', 'my', 'id', 'eg', 'ae', 'vn', 'ke', 'lk', 'sa', 'in', 'au',
 ];
@@ -43,7 +46,10 @@ function urlEntry(path, priority, changefreq) {
 
 const entries = [
   ...STATIC_PAGES.map((p) => urlEntry(p.path, p.priority, p.changefreq)),
-  ...PRIORITY_EVISA.map((code) => urlEntry(`/visa/${code}`, '0.95', 'weekly')),
+  ...TOP_EVISA.map((code) => urlEntry(`/visa/${code}`, '1.0', 'daily')),
+  ...PRIORITY_EVISA.filter((code) => !TOP_EVISA.includes(code)).map((code) =>
+    urlEntry(`/visa/${code}`, '0.95', 'weekly')
+  ),
   ...OTHER_EVISA.filter((c) => !PRIORITY_EVISA.includes(c)).map((code) =>
     urlEntry(`/visa/${code}`, '0.7', 'monthly')
   ),

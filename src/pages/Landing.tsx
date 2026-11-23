@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import InteractiveGlobe from '../components/globe/InteractiveGlobe';
 import { useWindowSize } from '../hooks/useWindowSize';
@@ -195,8 +196,55 @@ const Landing: React.FC<LandingProps> = ({
         </div>
       </div>
 
-      {/* Popular eVisa destinations — internal links for SEO */}
+      {/* Featured commercial eVisa destinations */}
       <div className="container mx-auto px-4 py-16 border-t border-gray-200 dark:border-gray-800">
+        <div className="mb-10 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+            Apply for Morocco eVisa &amp; Turkey eVisa online
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            Two of the most searched eVisa destinations — clear requirements, fees, and a guided
+            application with {AI_ASSISTANT_NAME}.
+          </p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto mb-14">
+          <Link
+            to="/visa/ma"
+            className="block rounded-2xl border border-primary-200 dark:border-primary-800 bg-white dark:bg-gray-800 p-6 shadow-sm hover:border-primary-500 hover:shadow-md transition-all"
+          >
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400 mb-2">
+              Morocco eVisa
+            </p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Morocco eVisa application online
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+              Check Morocco eVisa requirements, insurance rules, documents, and processing time — then
+              apply online with passport scan support.
+            </p>
+            <span className="font-semibold text-primary-600 dark:text-primary-400">
+              Start Morocco eVisa →
+            </span>
+          </Link>
+          <Link
+            to="/visa/tr"
+            className="block rounded-2xl border border-primary-200 dark:border-primary-800 bg-white dark:bg-gray-800 p-6 shadow-sm hover:border-primary-500 hover:shadow-md transition-all"
+          >
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400 mb-2">
+              Turkey eVisa
+            </p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Turkey eVisa application online
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+              Confirm Turkey eVisa eligibility, supporting visa rules, fees, and stay limits — then
+              submit a guided online application.
+            </p>
+            <span className="font-semibold text-primary-600 dark:text-primary-400">
+              Start Turkey eVisa →
+            </span>
+          </Link>
+        </div>
         <PopularEvisaLinks />
       </div>
 

@@ -6,6 +6,98 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# Consolidate duplicate Search Console URLs onto canonical /visa/{cc} pages.
+[[redirects]]
+  from = "/en/morocco-e-visa"
+  to = "/visa/ma"
+  status = 301
+
+[[redirects]]
+  from = "/en/morocco-e-visa/"
+  to = "/visa/ma"
+  status = 301
+
+[[redirects]]
+  from = "/en-US/morocco-e-visa"
+  to = "/visa/ma"
+  status = 301
+
+[[redirects]]
+  from = "/en-US/morocco-e-visa/"
+  to = "/visa/ma"
+  status = 301
+
+[[redirects]]
+  from = "/en/turkey-e-visa"
+  to = "/visa/tr"
+  status = 301
+
+[[redirects]]
+  from = "/en/turkey-e-visa/"
+  to = "/visa/tr"
+  status = 301
+
+[[redirects]]
+  from = "/en-US/turkey-e-visa"
+  to = "/visa/tr"
+  status = 301
+
+[[redirects]]
+  from = "/en-US/turkey-e-visa/"
+  to = "/visa/tr"
+  status = 301
+
+[[redirects]]
+  from = "/en/malaysia-e-visa"
+  to = "/visa/my"
+  status = 301
+
+[[redirects]]
+  from = "/en/malaysia-e-visa/"
+  to = "/visa/my"
+  status = 301
+
+[[redirects]]
+  from = "/en/indonesia-e-visa"
+  to = "/visa/id"
+  status = 301
+
+[[redirects]]
+  from = "/en/indonesia-e-visa/"
+  to = "/visa/id"
+  status = 301
+
+[[redirects]]
+  from = "/en/egypt-e-visa"
+  to = "/visa/eg"
+  status = 301
+
+[[redirects]]
+  from = "/en/egypt-e-visa/"
+  to = "/visa/eg"
+  status = 301
+
+[[redirects]]
+  from = "/en/vietnam-e-visa"
+  to = "/visa/vn"
+  status = 301
+
+[[redirects]]
+  from = "/en/vietnam-e-visa/"
+  to = "/visa/vn"
+  status = 301
+
+[[redirects]]
+  from = "/en/united-arab-emirates-e-visa"
+  to = "/visa/ae"
+  status = 301
+
+[[redirects]]
+  from = "/en/united-arab-emirates-e-visa/"
+  to = "/visa/ae"
+  status = 301
+
+# SPA fallback — existing files in dist/ (including /visa/ma/index.html) take precedence.
 [[redirects]]
   from = "/*"
   to = "/index.html"

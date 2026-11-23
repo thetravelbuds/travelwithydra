@@ -654,12 +654,27 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-4xl font-bold text-white">
-              {product.countryName}{' '}
-              <span className="text-primary-400">
-                {product.visaType === 'evisa' || product.visaType === 'eta' ? 'eVisa' : 'Visa'}
-              </span>
+              className="text-3xl sm:text-4xl font-bold text-white">
+              {isMorocco
+                ? 'Morocco eVisa Application Online'
+                : isTurkey
+                  ? 'Turkey eVisa Application Online'
+                  : (
+                    <>
+                      {product.countryName}{' '}
+                      <span className="text-primary-400">
+                        {product.visaType === 'evisa' || product.visaType === 'eta' ? 'eVisa' : 'Visa'}
+                      </span>
+                    </>
+                  )}
             </motion.h1>
+            {(isMorocco || isTurkey) && (
+              <p className="mt-2 max-w-2xl text-sm sm:text-base text-white/90">
+                {isMorocco
+                  ? 'Apply for your Morocco eVisa online — requirements, fees, processing time, and guided document checks with Hydra.'
+                  : 'Apply for your Turkey eVisa online — eligibility, supporting visa rules, fees, and step-by-step guidance with Hydra.'}
+              </p>
+            )}
           </div>
           <motion.div 
             initial={{ opacity: 0, y: 10 }}

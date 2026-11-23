@@ -35,6 +35,31 @@ const DestinationVisaGuide: React.FC<DestinationVisaGuideProps> = ({
 
   return (
     <div className="mb-8 space-y-8">
+      {content.seoHighlight && (
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-primary-100 bg-primary-50/60 p-6 dark:border-primary-900 dark:bg-primary-950/30"
+        >
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            {content.seoHighlight.title}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+            {content.seoHighlight.body}
+          </p>
+          {content.seoHighlight.bullets && content.seoHighlight.bullets.length > 0 && (
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2 text-sm text-gray-700 dark:text-gray-300">
+              {content.seoHighlight.bullets.map((bullet) => (
+                <li key={bullet} className="flex items-start gap-2">
+                  <FaCheckCircle className="mt-0.5 shrink-0 text-primary-600" />
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </motion.section>
+      )}
+
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

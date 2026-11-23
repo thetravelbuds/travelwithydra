@@ -6,11 +6,11 @@ export const SITE_URL = 'https://travelwithydra.com';
 export const SITE_NAME = PLATFORM_NAME;
 
 export const DEFAULT_SEO = {
-  title: `${PLATFORM_NAME} | Apply for eVisa Online — Morocco, Turkey, Malaysia & More`,
+  title: `Morocco eVisa & Turkey eVisa Online | Apply with ${PLATFORM_NAME}`,
   description:
-    `Apply for eVisas online with ${PLATFORM_NAME}. Fast Morocco eVisa, Turkey eVisa, Malaysia eVisa, Indonesia eVisa and 40+ destinations. Check requirements, fees, and apply with guided support.`,
+    `Apply for Morocco eVisa, Turkey eVisa, Malaysia eVisa and 40+ destinations online with ${PLATFORM_NAME}. Check requirements, fees, and processing times — then apply with guided support.`,
   keywords:
-    'evisa, morocco evisa, turkey evisa, malaysia evisa, indonesia evisa, online visa application, travel visa',
+    'morocco evisa, turkey evisa, evisa, malaysia evisa, indonesia evisa, online visa application, travel visa',
 };
 
 /** High-intent destinations — used for sitemap priority, footer links, and landing internal links. */
@@ -30,16 +30,18 @@ const VISA_SEO_OVERRIDES: Record<
   { title: string; description: string; keywords: string }
 > = {
   ma: {
-    title: `Morocco eVisa Application Online | Apply for Morocco Visa — ${PLATFORM_NAME}`,
+    title: `Morocco eVisa Application Online | Apply for Morocco eVisa — ${PLATFORM_NAME}`,
     description:
-      `Apply for your Morocco eVisa online in minutes. Check Morocco visa requirements, fees, and processing time. ${PLATFORM_NAME} guides you through passport scan, documents, and payment.`,
-    keywords: 'morocco evisa, morocco visa online, apply morocco evisa, morocco tourist visa',
+      `Apply for your Morocco eVisa online in minutes. See Morocco eVisa requirements, fees, processing time, documents, and insurance rules. ${PLATFORM_NAME} guides you through passport scan, upload, and payment.`,
+    keywords:
+      'morocco evisa, morocco e visa, morocco visa online, apply morocco evisa, morocco tourist visa, morocco evisa requirements, morocco evisa application',
   },
   tr: {
-    title: `Turkey eVisa Application Online | Apply for Turkey Visa — ${PLATFORM_NAME}`,
+    title: `Turkey eVisa Application Online | Apply for Turkey eVisa — ${PLATFORM_NAME}`,
     description:
-      `Get your Turkey eVisa online quickly. See Turkey visa requirements, government fee, and processing time. Apply with passport OCR and step-by-step guidance from ${PLATFORM_NAME}.`,
-    keywords: 'turkey evisa, turkey visa online, apply turkey evisa, turkish evisa',
+      `Get your Turkey eVisa online quickly. Check Turkey eVisa requirements, supporting visa rules, government fee, and processing time. Apply with passport OCR and step-by-step guidance from ${PLATFORM_NAME}.`,
+    keywords:
+      'turkey evisa, turkey e visa, turkey visa online, apply turkey evisa, turkish evisa, turkey evisa requirements, turkey evisa application',
   },
   my: {
     title: `Malaysia eVisa & MDAC Online | Malaysia Visa Application — ${PLATFORM_NAME}`,
