@@ -8,6 +8,7 @@ import {
   incrementAiDailyUsage,
 } from '../../config/aiAssistantAccess';
 import { AI_ASSISTANT_NAME, AI_WELCOME_MESSAGE, HYDRA_AI_MODEL_LABEL } from '../../config/brand';
+import { getVisaProductPath } from '../../config/visaSlugs';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -55,7 +56,7 @@ const processLinks = (text: string): React.ReactNode => {
         onClick={(e) => {
           e.preventDefault();
           // Navigate to the country's visa page without closing the chat
-          window.location.href = `/visa/${countryCode}`;
+          window.location.href = getVisaProductPath(countryCode);
         }}
         className="inline-block bg-primary-600 hover:bg-primary-700 text-white text-sm px-3 py-1 rounded transition-colors mt-2"
       >

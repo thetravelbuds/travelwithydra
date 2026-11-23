@@ -29,6 +29,7 @@ import { VisaApplication } from '../types/visa';
 import { isIncompleteDraft, getVisaApplicationProgressLabel } from '../utils/visaApplicationProgress';
 import { visaRequirementsService } from '../services/visaRequirementsService';
 import { BRAND_EMAIL } from '../config/brand';
+import { getVisaProductPath } from '../config/visaSlugs';
 import type { PassportMobilityStats } from '../services/visaCsvData';
 import FeatureGate from '../components/Dashboard/FeatureGate';
 import TravelAlertsPanel from '../components/Dashboard/TravelAlertsPanel';
@@ -1159,7 +1160,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </div>
                 
                 <Link 
-                  to={`/visa/${destination.code.toLowerCase()}?nationality=${nationalityCode}`}
+                  to={`${getVisaProductPath(destination.code)}?nationality=${nationalityCode}`}
                   className="mt-2 text-teal-600 hover:text-teal-800 font-medium text-sm flex items-center"
                 >
                   {destination.serviceType === 'schengen' ? 'Apply for Schengen Visa' : 'Apply Now'}

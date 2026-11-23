@@ -19,6 +19,7 @@ import {
   getWaiverResultMessage,
   getWaiverResultTitle,
 } from '../config/destinationWaiverUi';
+import { getVisaProductPath } from '../config/visaSlugs';
 
 interface VisaCheckerProps {
   onApplyEVisa?: (nationality: string, destination: string) => void;
@@ -149,7 +150,7 @@ const VisaChecker: React.FC<VisaCheckerProps> = () => {
 
   const handleViewProductPage = () => {
     const query = eligibilityQuery();
-    navigate(`/visa/${destination}?nationality=${nationality}${query ? query.replace('?', '&') : ''}`);
+    navigate(`${getVisaProductPath(destination)}?nationality=${nationality}${query ? query.replace('?', '&') : ''}`);
   };
 
   const handleContinueToApplication = () => {

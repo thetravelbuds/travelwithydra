@@ -1,6 +1,6 @@
 /**
  * Build-time SEO metadata for static HTML shells.
- * Keep titles/descriptions aligned with src/config/seo.ts.
+ * Keep titles/descriptions aligned with src/config/seo.ts and slugs with visaSlugs.ts.
  */
 export const SITE_URL = 'https://travelwithydra.com';
 export const SITE_NAME = 'Hydra';
@@ -15,12 +15,12 @@ export const DEFAULT_SEO = {
     'morocco evisa, turkey evisa, evisa, online visa application, malaysia evisa, indonesia evisa',
 };
 
-/** Priority eVisa pages that get dedicated static HTML shells. */
+/** Priority eVisa pages that get dedicated static HTML shells (keyword-rich slugs). */
 export const VISA_SEO_PAGES = [
   {
     code: 'ma',
     name: 'Morocco',
-    path: '/visa/ma',
+    path: '/visa/morocco-evisa',
     title: 'Morocco eVisa Application Online | Apply for Morocco eVisa — Hydra',
     description:
       'Apply for your Morocco eVisa online in minutes. See Morocco eVisa requirements, fees, processing time, documents, and insurance rules. Guided application with Hydra.',
@@ -55,7 +55,7 @@ export const VISA_SEO_PAGES = [
   {
     code: 'tr',
     name: 'Turkey',
-    path: '/visa/tr',
+    path: '/visa/turkey-evisa',
     title: 'Turkey eVisa Application Online | Apply for Turkey eVisa — Hydra',
     description:
       'Get your Turkey eVisa online quickly. Check Turkey eVisa requirements, supporting visa rules, fees, and processing time. Apply with passport OCR and step-by-step guidance from Hydra.',
@@ -90,7 +90,7 @@ export const VISA_SEO_PAGES = [
   {
     code: 'my',
     name: 'Malaysia',
-    path: '/visa/my',
+    path: '/visa/malaysia-evisa',
     title: 'Malaysia eVisa Application Online | Apply for Malaysia eVisa — Hydra',
     description:
       'Apply for Malaysia eVisa online. Check Malaysia visa requirements, fees, and processing time with guided support from Hydra.',
@@ -103,7 +103,7 @@ export const VISA_SEO_PAGES = [
   {
     code: 'id',
     name: 'Indonesia',
-    path: '/visa/id',
+    path: '/visa/indonesia-evisa',
     title: 'Indonesia eVisa Application Online | Apply for Indonesia eVisa — Hydra',
     description:
       'Apply for Indonesia eVisa online. Check Indonesia visa requirements, stay length, and fees with Hydra guidance.',
@@ -116,7 +116,7 @@ export const VISA_SEO_PAGES = [
   {
     code: 'eg',
     name: 'Egypt',
-    path: '/visa/eg',
+    path: '/visa/egypt-evisa',
     title: 'Egypt eVisa Application Online | Apply for Egypt eVisa — Hydra',
     description:
       'Apply for Egypt eVisa online. View Egypt visa requirements, processing time, and government fees.',
@@ -128,7 +128,7 @@ export const VISA_SEO_PAGES = [
   {
     code: 'ae',
     name: 'UAE',
-    path: '/visa/ae',
+    path: '/visa/uae-evisa',
     title: 'UAE eVisa Application Online | Dubai Visa — Hydra',
     description:
       'Apply for UAE eVisa online for Dubai and the Emirates. Requirements, fees, and guided application support from Hydra.',
@@ -140,7 +140,7 @@ export const VISA_SEO_PAGES = [
   {
     code: 'vn',
     name: 'Vietnam',
-    path: '/visa/vn',
+    path: '/visa/vietnam-evisa',
     title: 'Vietnam eVisa Application Online | Apply for Vietnam eVisa — Hydra',
     description:
       'Apply for Vietnam eVisa online. Check Vietnam visa requirements, stay duration, and fees.',
@@ -175,24 +175,44 @@ export const STATIC_SEO_PAGES = [
   },
 ];
 
-/** Legacy URL aliases seen in Search Console — consolidate onto /visa/{cc}. */
+/**
+ * Legacy / short-code URLs → keyword-rich canonicals.
+ * Includes prior /en/* paths and ISO /visa/{cc} shortcuts.
+ */
 export const LEGACY_REDIRECTS = [
-  { from: '/en/morocco-e-visa', to: '/visa/ma' },
-  { from: '/en/morocco-e-visa/', to: '/visa/ma' },
-  { from: '/en-US/morocco-e-visa', to: '/visa/ma' },
-  { from: '/en-US/morocco-e-visa/', to: '/visa/ma' },
-  { from: '/en/turkey-e-visa', to: '/visa/tr' },
-  { from: '/en/turkey-e-visa/', to: '/visa/tr' },
-  { from: '/en-US/turkey-e-visa', to: '/visa/tr' },
-  { from: '/en-US/turkey-e-visa/', to: '/visa/tr' },
-  { from: '/en/malaysia-e-visa', to: '/visa/my' },
-  { from: '/en/malaysia-e-visa/', to: '/visa/my' },
-  { from: '/en/indonesia-e-visa', to: '/visa/id' },
-  { from: '/en/indonesia-e-visa/', to: '/visa/id' },
-  { from: '/en/egypt-e-visa', to: '/visa/eg' },
-  { from: '/en/egypt-e-visa/', to: '/visa/eg' },
-  { from: '/en/vietnam-e-visa', to: '/visa/vn' },
-  { from: '/en/vietnam-e-visa/', to: '/visa/vn' },
-  { from: '/en/united-arab-emirates-e-visa', to: '/visa/ae' },
-  { from: '/en/united-arab-emirates-e-visa/', to: '/visa/ae' },
+  // Morocco
+  { from: '/visa/ma', to: '/visa/morocco-evisa' },
+  { from: '/visa/ma/', to: '/visa/morocco-evisa' },
+  { from: '/en/morocco-e-visa', to: '/visa/morocco-evisa' },
+  { from: '/en/morocco-e-visa/', to: '/visa/morocco-evisa' },
+  { from: '/en-US/morocco-e-visa', to: '/visa/morocco-evisa' },
+  { from: '/en-US/morocco-e-visa/', to: '/visa/morocco-evisa' },
+  // Turkey
+  { from: '/visa/tr', to: '/visa/turkey-evisa' },
+  { from: '/visa/tr/', to: '/visa/turkey-evisa' },
+  { from: '/en/turkey-e-visa', to: '/visa/turkey-evisa' },
+  { from: '/en/turkey-e-visa/', to: '/visa/turkey-evisa' },
+  { from: '/en-US/turkey-e-visa', to: '/visa/turkey-evisa' },
+  { from: '/en-US/turkey-e-visa/', to: '/visa/turkey-evisa' },
+  // Other priority destinations
+  { from: '/visa/my', to: '/visa/malaysia-evisa' },
+  { from: '/visa/my/', to: '/visa/malaysia-evisa' },
+  { from: '/en/malaysia-e-visa', to: '/visa/malaysia-evisa' },
+  { from: '/en/malaysia-e-visa/', to: '/visa/malaysia-evisa' },
+  { from: '/visa/id', to: '/visa/indonesia-evisa' },
+  { from: '/visa/id/', to: '/visa/indonesia-evisa' },
+  { from: '/en/indonesia-e-visa', to: '/visa/indonesia-evisa' },
+  { from: '/en/indonesia-e-visa/', to: '/visa/indonesia-evisa' },
+  { from: '/visa/eg', to: '/visa/egypt-evisa' },
+  { from: '/visa/eg/', to: '/visa/egypt-evisa' },
+  { from: '/en/egypt-e-visa', to: '/visa/egypt-evisa' },
+  { from: '/en/egypt-e-visa/', to: '/visa/egypt-evisa' },
+  { from: '/visa/vn', to: '/visa/vietnam-evisa' },
+  { from: '/visa/vn/', to: '/visa/vietnam-evisa' },
+  { from: '/en/vietnam-e-visa', to: '/visa/vietnam-evisa' },
+  { from: '/en/vietnam-e-visa/', to: '/visa/vietnam-evisa' },
+  { from: '/visa/ae', to: '/visa/uae-evisa' },
+  { from: '/visa/ae/', to: '/visa/uae-evisa' },
+  { from: '/en/united-arab-emirates-e-visa', to: '/visa/uae-evisa' },
+  { from: '/en/united-arab-emirates-e-visa/', to: '/visa/uae-evisa' },
 ];

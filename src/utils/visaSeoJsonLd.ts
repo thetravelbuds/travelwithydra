@@ -1,8 +1,9 @@
 import { SITE_URL, absoluteUrl } from '../config/seo';
 import { PLATFORM_NAME } from '../config/brand';
+import { getVisaProductPath } from '../config/visaSlugs';
 
 export function buildVisaServiceJsonLd(countryCode: string, countryName: string) {
-  const url = absoluteUrl(`/visa/${countryCode.toLowerCase()}`);
+  const url = absoluteUrl(getVisaProductPath(countryCode));
   return {
     '@context': 'https://schema.org',
     '@type': 'Service',

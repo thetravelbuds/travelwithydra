@@ -1,6 +1,7 @@
 /** Site-wide SEO configuration and per-country eVisa page metadata. */
 
 import { PLATFORM_NAME } from './brand';
+import { getVisaProductPath } from './visaSlugs';
 
 export const SITE_URL = 'https://travelwithydra.com';
 export const SITE_NAME = PLATFORM_NAME;
@@ -138,11 +139,12 @@ export function absoluteUrl(path: string): string {
 
 export function getVisaPageSeo(countryCode: string, countryName: string): PageSeo {
   const code = countryCode.toLowerCase().trim();
+  const canonicalPath = getVisaProductPath(code);
   const override = VISA_SEO_OVERRIDES[code];
   if (override) {
     return {
       ...override,
-      canonicalPath: `/visa/${code}`,
+      canonicalPath,
     };
   }
 
@@ -150,7 +152,7 @@ export function getVisaPageSeo(countryCode: string, countryName: string): PageSe
     title: `${countryName} eVisa Application Online | ${countryName} Visa — ${PLATFORM_NAME}`,
     description: `Apply for your ${countryName} eVisa online with ${PLATFORM_NAME}. Check ${countryName} visa requirements, government fees, processing time, and required documents. Fast, guided online application.`,
     keywords: `${countryName.toLowerCase()} evisa, ${countryName.toLowerCase()} visa online, apply ${countryName.toLowerCase()} evisa`,
-    canonicalPath: `/visa/${code}`,
+    canonicalPath,
   };
 }
 

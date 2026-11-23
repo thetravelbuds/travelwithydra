@@ -1,26 +1,35 @@
 /**
- * Generates public/sitemap.xml with priority eVisa pages first.
+ * Generates public/sitemap.xml with keyword-rich eVisa URLs first.
  * Run before vite build: npm run generate-sitemap
  */
 import { writeFileSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { VISA_SEO_PAGES } from './seo-meta.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const SITE_URL = 'https://travelwithydra.com';
 
-/** Morocco & Turkey first — highest commercial intent. */
-const TOP_EVISA = ['ma', 'tr'];
+/** Morocco & Turkey first — highest commercial intent (keyword slugs). */
+const TOP_EVISA_PATHS = ['/visa/morocco-evisa', '/visa/turkey-evisa'];
 
-const PRIORITY_EVISA = [
-  'ma', 'tr', 'my', 'id', 'eg', 'ae', 'vn', 'ke', 'lk', 'sa', 'in', 'au',
-];
+const PRIORITY_FROM_SEO = VISA_SEO_PAGES.map((p) => p.path);
 
-const OTHER_EVISA = [
-  'dz', 'az', 'bh', 'bj', 'bt', 'br', 'kh', 'cm', 'cl', 'cn', 'cu', 'et',
-  'ga', 'ge', 'gh', 'gn', 'hk', 'jo', 'la', 'mg', 'mn', 'nz', 'ng', 'pg',
-  'ph', 'ru', 'kr', 'tj', 'tz', 'tg', 'ug', 'gb', 'us', 'uy', 'uz', 'zm',
+const OTHER_EVISA_SLUGS = [
+  '/visa/kenya-evisa',
+  '/visa/sri-lanka-eta',
+  '/visa/saudi-arabia-evisa',
+  '/visa/uk-visitor-visa',
+  '/visa/us-visitor-visa',
+  '/visa/canada-visitor-visa',
+  '/visa/australia-visa',
+  '/visa/new-zealand-visa',
+  '/visa/france-schengen-visa',
+  '/visa/greece-schengen-visa',
+  '/visa/italy-schengen-visa',
+  '/visa/spain-schengen-visa',
+  '/visa/germany-schengen-visa',
 ];
 
 const STATIC_PAGES = [
@@ -44,16 +53,21 @@ function urlEntry(path, priority, changefreq) {
   </url>`;
 }
 
-const entries = [
-  ...STATIC_PAGES.map((p) => urlEntry(p.path, p.priority, p.changefreq)),
-  ...TOP_EVISA.map((code) => urlEntry(`/visa/${code}`, '1.0', 'daily')),
-  ...PRIORITY_EVISA.filter((code) => !TOP_EVISA.includes(code)).map((code) =>
-    urlEntry(`/visa/${code}`, '0.95', 'weekly')
-  ),
-  ...OTHER_EVISA.filter((c) => !PRIORITY_EVISA.includes(c)).map((code) =>
-    urlEntry(`/visa/${code}`, '0.7', 'monthly')
-  ),
-];
+const seen = new Set();
+const entries = [];
+
+function push(path, priority, changefreq) {
+  if (seen.has(path)) return;
+  seen.add(path);
+  entries.push(urlEntry(path, priority, changefreq));
+}
+
+for (const p of STATIC_PAGES) push(p.path, p.priority, p.changefreq);
+for (const path of TOP_EVISA_PATHS) push(path, '1.0', 'daily');
+for (const path of PRIORITY_FROM_SEO) {
+  if (!TOP_EVISA_PATHS.includes(path)) push(path, '0.95', 'weekly');
+}
+for (const path of OTHER_EVISA_SLUGS) push(path, '0.85', 'weekly');
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

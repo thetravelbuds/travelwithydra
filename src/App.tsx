@@ -567,12 +567,12 @@ const AppContent: React.FC = () => {
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<RequireAuth><AdminDashboard /></RequireAuth>} />
-              <Route path="/visa/:countryCode" element={<VisaProduct />} />
               <Route path="/visa/browse" element={<VisaProductBrowser />} />
               <Route path="/visa/apply/:nationality/:destination" element={<VisaApplicationPage />} />
+              <Route path="/visa/confirmation/:applicationId" element={<VisaConfirmationPage />} />
+              <Route path="/visa/:countryCode" element={<VisaProduct />} />
               <Route path="/payment/:applicationId" element={<PaymentPage />} />
               <Route path="/payment-test" element={<PaymentPage />} />
-              <Route path="/visa/confirmation/:applicationId" element={<VisaConfirmationPage />} />
               <Route path="/email-preferences" element={<EmailPreferences />} />
               <Route path="/blogs" element={<BlogListing />} />
               <Route path="/blog/:id" element={<BlogDetail />} />

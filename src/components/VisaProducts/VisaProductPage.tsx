@@ -58,6 +58,7 @@ import { CANADA_VISA_GUIDE, isCanadaDestination } from '../../config/canadaVisaC
 import { AUSTRALIA_VISA_GUIDE, isAustraliaDestination } from '../../config/australiaVisaContent';
 import { NEW_ZEALAND_VISA_GUIDE, isNewZealandDestination } from '../../config/newZealandVisaContent';
 import { TURKEY_VISA_GUIDE } from '../../config/turkeyEvisaContent';
+import { getVisaProductPath } from '../../config/visaSlugs';
 import { 
   FaGlobe, 
   FaPassport, 
@@ -351,7 +352,7 @@ const VisaProductPage: React.FC<VisaProductPageProps> = ({ product }) => {
     }
 
     const { user } = await authService.getCurrentUser();
-    const loginReturnPath = `/visa/${product.countryCode}${location.search}`;
+    const loginReturnPath = `${getVisaProductPath(product.countryCode)}${location.search}`;
 
     if (!user) {
       localStorage.setItem('redirectAfterLogin', loginReturnPath);

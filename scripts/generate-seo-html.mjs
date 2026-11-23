@@ -136,8 +136,8 @@ function buildNoscript(page) {
     <p><a href="${SITE_URL}${page.path}">Continue to ${escapeHtml(page.h1 || page.title)}</a></p>
     ${faqHtml ? `<section><h2>Frequently asked questions</h2>${faqHtml}</section>` : ''}
     <p>Popular destinations:
-      <a href="${SITE_URL}/visa/ma">Morocco eVisa</a> ·
-      <a href="${SITE_URL}/visa/tr">Turkey eVisa</a> ·
+      <a href="${SITE_URL}/visa/morocco-evisa">Morocco eVisa</a> ·
+      <a href="${SITE_URL}/visa/turkey-evisa">Turkey eVisa</a> ·
       <a href="${SITE_URL}/visa/browse">All eVisas</a>
     </p>
   </main>

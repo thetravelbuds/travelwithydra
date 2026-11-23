@@ -209,7 +209,7 @@ const Landing: React.FC<LandingProps> = ({
         </div>
         <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto mb-14">
           <Link
-            to="/visa/ma"
+            to="/visa/morocco-evisa"
             className="block rounded-2xl border border-primary-200 dark:border-primary-800 bg-white dark:bg-gray-800 p-6 shadow-sm hover:border-primary-500 hover:shadow-md transition-all"
           >
             <p className="text-sm font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400 mb-2">
@@ -227,7 +227,7 @@ const Landing: React.FC<LandingProps> = ({
             </span>
           </Link>
           <Link
-            to="/visa/tr"
+            to="/visa/turkey-evisa"
             className="block rounded-2xl border border-primary-200 dark:border-primary-800 bg-white dark:bg-gray-800 p-6 shadow-sm hover:border-primary-500 hover:shadow-md transition-all"
           >
             <p className="text-sm font-semibold uppercase tracking-wide text-primary-600 dark:text-primary-400 mb-2">

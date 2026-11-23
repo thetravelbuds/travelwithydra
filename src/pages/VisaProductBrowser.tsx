@@ -6,6 +6,7 @@ import { ALL_COUNTRIES, getFlagUrl } from '../utils/countries';
 import { PLATFORM_NAME } from '../config/brand';
 import SeoHead from '../components/seo/SeoHead';
 import PopularEvisaLinks from '../components/seo/PopularEvisaLinks';
+import { getVisaProductPath } from '../config/visaSlugs';
 
 const VisaProductBrowser: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -118,7 +119,7 @@ const VisaProductBrowser: React.FC = () => {
         {filteredProducts.map((product) => (
           <Link 
             key={product.countryCode} 
-            to={`/visa/${product.countryCode}`}
+            to={getVisaProductPath(product.countryCode)}
             className="block"
           >
             <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">

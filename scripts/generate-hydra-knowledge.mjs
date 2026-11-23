@@ -13,15 +13,15 @@ const knowledgeDir = join(root, 'src', 'knowledge');
 const outPath = join(root, 'netlify', 'functions', 'lib', 'hydra-knowledge.mjs');
 
 const VISA_CONTENT_FILES = [
-  { file: 'turkeyEvisaContent.ts', label: 'Turkey eVisa', route: '/visa/tr', code: 'TR' },
-  { file: 'egyptEvisaContent.ts', label: 'Egypt eVisa', route: '/visa/eg', code: 'EG' },
-  { file: 'moroccoEvisaContent.ts', label: 'Morocco eVisa', route: '/visa/ma', code: 'MA' },
-  { file: 'ukVisaContent.ts', label: 'UK Visitor Visa', route: '/visa/gb', code: 'GB' },
-  { file: 'schengenVisaContent.ts', label: 'Schengen Visa', route: '/visa/eu', code: 'EU' },
-  { file: 'usaVisaContent.ts', label: 'US Visa (B1/B2)', route: '/visa/us', code: 'US' },
-  { file: 'canadaVisaContent.ts', label: 'Canada Visitor Visa / eTA', route: '/visa/ca', code: 'CA' },
-  { file: 'australiaVisaContent.ts', label: 'Australia Visitor Visa', route: '/visa/au', code: 'AU' },
-  { file: 'newZealandVisaContent.ts', label: 'New Zealand Visitor Visa', route: '/visa/nz', code: 'NZ' },
+  { file: 'turkeyEvisaContent.ts', label: 'Turkey eVisa', route: '/visa/turkey-evisa', code: 'TR' },
+  { file: 'egyptEvisaContent.ts', label: 'Egypt eVisa', route: '/visa/egypt-evisa', code: 'EG' },
+  { file: 'moroccoEvisaContent.ts', label: 'Morocco eVisa', route: '/visa/morocco-evisa', code: 'MA' },
+  { file: 'ukVisaContent.ts', label: 'UK Visitor Visa', route: '/visa/uk-visitor-visa', code: 'GB' },
+  { file: 'schengenVisaContent.ts', label: 'Schengen Visa', route: '/visa/france-schengen-visa', code: 'EU' },
+  { file: 'usaVisaContent.ts', label: 'US Visa (B1/B2)', route: '/visa/us-visitor-visa', code: 'US' },
+  { file: 'canadaVisaContent.ts', label: 'Canada Visitor Visa / eTA', route: '/visa/canada-visitor-visa', code: 'CA' },
+  { file: 'australiaVisaContent.ts', label: 'Australia Visitor Visa', route: '/visa/australia-visa', code: 'AU' },
+  { file: 'newZealandVisaContent.ts', label: 'New Zealand Visitor Visa', route: '/visa/new-zealand-visa', code: 'NZ' },
 ];
 
 function readJson(name) {

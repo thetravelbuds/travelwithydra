@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import VisaProductPage from '../components/VisaProducts/VisaProductPage';
 import { generateVisaProductForCountry } from '../utils/visaProductGenerator';
 import { ALL_COUNTRIES } from '../utils/countries';
@@ -15,6 +15,11 @@ import {
 } from '../utils/visaSeoJsonLd';
 import { getMoroccoEvisaFaqs, MOROCCO_APPLICATION_STEPS } from '../config/moroccoEvisaContent';
 import { TURKEY_VISA_GUIDE } from '../config/turkeyEvisaContent';
+import {
+  getVisaProductPath,
+  getVisaSlug,
+  resolveVisaCountryCode,
+} from '../config/visaSlugs';
 
 // Cloudinary config from index.js
 const CLOUDINARY_CONFIG = {
@@ -24,16 +29,30 @@ const CLOUDINARY_CONFIG = {
 };
 
 const VisaProduct: React.FC = () => {
-  const { countryCode } = useParams<{ countryCode: string }>();
+  const { countryCode: countryParam } = useParams<{ countryCode: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const countryCode = useMemo(
+    () => resolveVisaCountryCode(countryParam) ?? undefined,
+    [countryParam]
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [productData, setProductData] = useState<VisaProduct | null>(null);
   const [countryName, setCountryName] = useState<string>('');
 
+  // Canonicalize /visa/ma → /visa/morocco-evisa (keeps keyword-rich URLs in the address bar)
+  useEffect(() => {
+    if (!countryParam || !countryCode) return;
+    const canonicalSlug = getVisaSlug(countryCode);
+    if (countryParam.toLowerCase() !== canonicalSlug) {
+      navigate(`${getVisaProductPath(countryCode)}${location.search}`, { replace: true });
+    }
+  }, [countryParam, countryCode, navigate, location.search]);
+
   // Use useCallback to prevent this function from being recreated on every render
   const handleCountryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    navigate(`/visa/${e.target.value}`);
+    navigate(getVisaProductPath(e.target.value));
   }, [navigate]);
 
   // Load visa product data for the selected country
@@ -78,8 +97,13 @@ const VisaProduct: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!countryParam) {
+      setError('Country is required');
+      setLoading(false);
+      return;
+    }
     if (!countryCode) {
-      setError('Country code is required');
+      setError(`Unknown visa destination: ${countryParam}`);
       setLoading(false);
       return;
     }
@@ -97,7 +121,7 @@ const VisaProduct: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [countryCode, loadProductData]);
+  }, [countryParam, countryCode, loadProductData]);
 
   const seo = useMemo(() => {
     if (!countryCode || !countryName) return null;
@@ -112,7 +136,7 @@ const VisaProduct: React.FC = () => {
       buildBreadcrumbJsonLd([
         { name: 'Home', path: '/' },
         { name: 'eVisa Destinations', path: '/visa/browse' },
-        { name: `${countryName} eVisa`, path: `/visa/${code}` },
+        { name: `${countryName} eVisa`, path: getVisaProductPath(code) },
       ]),
     ];
 

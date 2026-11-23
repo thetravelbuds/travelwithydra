@@ -17,6 +17,7 @@ import { getSchengenFaqs } from '../config/schengenVisaContent';
 import { isCanadaDestination } from '../config/canadaVisaContent';
 import { isAustraliaDestination } from '../config/australiaVisaContent';
 import { isNewZealandDestination } from '../config/newZealandVisaContent';
+import { getVisaProductPath } from '../config/visaSlugs';
 
 /**
  * Generate visa product data for a specific country
@@ -453,5 +454,5 @@ export const generateAllVisaProducts = (
  * Get a list of all visa product paths
  */
 export const getAllVisaProductPaths = (): string[] => {
-  return ALL_COUNTRIES.map(country => `/visa/${country.code}`);
+  return ALL_COUNTRIES.map((country) => getVisaProductPath(country.code));
 };

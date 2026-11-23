@@ -43,291 +43,123 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/ma</loc>
+    <loc>https://travelwithydra.com/visa/morocco-evisa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/tr</loc>
+    <loc>https://travelwithydra.com/visa/turkey-evisa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/my</loc>
+    <loc>https://travelwithydra.com/visa/malaysia-evisa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/id</loc>
+    <loc>https://travelwithydra.com/visa/indonesia-evisa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/eg</loc>
+    <loc>https://travelwithydra.com/visa/egypt-evisa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/ae</loc>
+    <loc>https://travelwithydra.com/visa/uae-evisa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/vn</loc>
+    <loc>https://travelwithydra.com/visa/vietnam-evisa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/ke</loc>
+    <loc>https://travelwithydra.com/visa/kenya-evisa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/lk</loc>
+    <loc>https://travelwithydra.com/visa/sri-lanka-eta</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/sa</loc>
+    <loc>https://travelwithydra.com/visa/saudi-arabia-evisa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/in</loc>
+    <loc>https://travelwithydra.com/visa/uk-visitor-visa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/au</loc>
+    <loc>https://travelwithydra.com/visa/us-visitor-visa</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/dz</loc>
+    <loc>https://travelwithydra.com/visa/canada-visitor-visa</loc>
     <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/az</loc>
+    <loc>https://travelwithydra.com/visa/australia-visa</loc>
     <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/bh</loc>
+    <loc>https://travelwithydra.com/visa/new-zealand-visa</loc>
     <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/bj</loc>
+    <loc>https://travelwithydra.com/visa/france-schengen-visa</loc>
     <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/bt</loc>
+    <loc>https://travelwithydra.com/visa/greece-schengen-visa</loc>
     <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/br</loc>
+    <loc>https://travelwithydra.com/visa/italy-schengen-visa</loc>
     <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/kh</loc>
+    <loc>https://travelwithydra.com/visa/spain-schengen-visa</loc>
     <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://travelwithydra.com/visa/cm</loc>
+    <loc>https://travelwithydra.com/visa/germany-schengen-visa</loc>
     <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/cl</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/cn</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/cu</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/et</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/ga</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/ge</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/gh</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/gn</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/hk</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/jo</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/la</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/mg</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/mn</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/nz</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/ng</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/pg</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/ph</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/ru</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/kr</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/tj</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/tz</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/tg</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/ug</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/gb</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/us</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/uy</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/uz</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://travelwithydra.com/visa/zm</loc>
-    <lastmod>2026-11-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
 </urlset>
