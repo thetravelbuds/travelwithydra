@@ -1,44 +1,26 @@
 /**
- * Generates public/sitemap.xml with keyword-rich eVisa URLs first.
- * Run before vite build: npm run generate-sitemap
+ * Generates public/sitemap.xml with keyword-rich eVisa URLs for every country.
  */
 import { writeFileSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { VISA_SEO_PAGES } from './seo-meta.mjs';
+import { loadCountries, getVisaProductPath } from './visa-url-utils.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const SITE_URL = 'https://travelwithydra.com';
 
-/** Morocco & Turkey first — highest commercial intent (keyword slugs). */
-const TOP_EVISA_PATHS = ['/visa/morocco-evisa', '/visa/turkey-evisa'];
-
-const PRIORITY_FROM_SEO = VISA_SEO_PAGES.map((p) => p.path);
-
-const OTHER_EVISA_SLUGS = [
-  '/visa/kenya-evisa',
-  '/visa/sri-lanka-eta',
-  '/visa/saudi-arabia-evisa',
-  '/visa/uk-visitor-visa',
-  '/visa/us-visitor-visa',
-  '/visa/canada-visitor-visa',
-  '/visa/australia-visa',
-  '/visa/new-zealand-visa',
-  '/visa/france-schengen-visa',
-  '/visa/greece-schengen-visa',
-  '/visa/italy-schengen-visa',
-  '/visa/spain-schengen-visa',
-  '/visa/germany-schengen-visa',
-];
+const TOP_CODES = new Set(['ma', 'tr']);
+const PRIORITY_CODES = new Set(VISA_SEO_PAGES.map((p) => p.code));
 
 const STATIC_PAGES = [
   { path: '/', priority: '1.0', changefreq: 'weekly' },
   { path: '/visa/browse', priority: '0.9', changefreq: 'weekly' },
-  { path: '/visa-checker', priority: '0.8', changefreq: 'monthly' },
-  { path: '/features', priority: '0.7', changefreq: 'monthly' },
+  { path: '/visa-checker', priority: '0.85', changefreq: 'weekly' },
+  { path: '/features', priority: '0.6', changefreq: 'monthly' },
   { path: '/pricing', priority: '0.7', changefreq: 'monthly' },
-  { path: '/contact', priority: '0.5', changefreq: 'yearly' },
+  { path: '/contact', priority: '0.4', changefreq: 'yearly' },
   { path: '/blogs', priority: '0.6', changefreq: 'weekly' },
 ];
 
@@ -63,11 +45,19 @@ function push(path, priority, changefreq) {
 }
 
 for (const p of STATIC_PAGES) push(p.path, p.priority, p.changefreq);
-for (const path of TOP_EVISA_PATHS) push(path, '1.0', 'daily');
-for (const path of PRIORITY_FROM_SEO) {
-  if (!TOP_EVISA_PATHS.includes(path)) push(path, '0.95', 'weekly');
+
+const countries = loadCountries();
+const sorted = [...countries].sort((a, b) => {
+  const score = (c) => (TOP_CODES.has(c.code) ? 0 : PRIORITY_CODES.has(c.code) ? 1 : 2);
+  return score(a) - score(b) || a.name.localeCompare(b.name);
+});
+
+for (const country of sorted) {
+  const path = getVisaProductPath(country.code, country.name);
+  if (TOP_CODES.has(country.code)) push(path, '1.0', 'daily');
+  else if (PRIORITY_CODES.has(country.code)) push(path, '0.95', 'weekly');
+  else push(path, '0.7', 'monthly');
 }
-for (const path of OTHER_EVISA_SLUGS) push(path, '0.85', 'weekly');
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

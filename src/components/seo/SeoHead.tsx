@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
-import { DEFAULT_SEO, SITE_NAME, absoluteUrl, type PageSeo } from '../../config/seo';
+import { DEFAULT_SEO, SITE_NAME, SITE_URL, absoluteUrl, type PageSeo } from '../../config/seo';
+
+const DEFAULT_OG_IMAGE = `${SITE_URL}/logo.png`;
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string) {
   if (!content) return;
@@ -26,6 +28,7 @@ function upsertLink(rel: string, href: string) {
 export interface SeoHeadProps extends Partial<PageSeo> {
   /** JSON-LD object(s) injected as application/ld+json */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  ogImage?: string;
 }
 
 const SeoHead: React.FC<SeoHeadProps> = ({
@@ -35,6 +38,7 @@ const SeoHead: React.FC<SeoHeadProps> = ({
   canonicalPath,
   noindex = false,
   jsonLd,
+  ogImage = DEFAULT_OG_IMAGE,
 }) => {
   const jsonLdKey = jsonLd ? JSON.stringify(jsonLd) : '';
 
@@ -53,10 +57,12 @@ const SeoHead: React.FC<SeoHeadProps> = ({
     upsertMeta('property', 'og:url', canonical);
     upsertMeta('property', 'og:type', 'website');
     upsertMeta('property', 'og:site_name', SITE_NAME);
+    upsertMeta('property', 'og:image', ogImage);
 
     upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
+    upsertMeta('name', 'twitter:image', ogImage);
 
     const scriptId = 'seo-json-ld';
     document.getElementById(scriptId)?.remove();
@@ -71,7 +77,7 @@ const SeoHead: React.FC<SeoHeadProps> = ({
     return () => {
       document.getElementById(scriptId)?.remove();
     };
-  }, [title, description, keywords, canonicalPath, noindex, jsonLdKey]);
+  }, [title, description, keywords, canonicalPath, noindex, jsonLdKey, ogImage]);
 
   return null;
 };

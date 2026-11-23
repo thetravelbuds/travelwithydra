@@ -6,6 +6,7 @@ import { ALL_COUNTRIES } from '../utils/countries';
 import { getCountryNameFromCode } from '../lib/api/visaRequirements';
 import type { VisaProduct } from '../types/visaProduct';
 import SeoHead from '../components/seo/SeoHead';
+import VisaBreadcrumbs from '../components/seo/VisaBreadcrumbs';
 import { getVisaPageSeo } from '../config/seo';
 import {
   buildBreadcrumbJsonLd,
@@ -224,6 +225,9 @@ const VisaProduct: React.FC = () => {
       {/* Country Selector */}
       <div className="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {countryCode && countryName && (
+            <VisaBreadcrumbs countryCode={countryCode} countryName={countryName} />
+          )}
           <div className="flex flex-col sm:flex-row justify-between items-center">
             <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2 sm:mb-0">
               Visa Requirements for {countryName}
