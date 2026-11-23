@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { PRIORITY_EVISA_DESTINATIONS } from '../../config/seo';
+import { getVisaProductPath } from '../../config/visaSlugs';
 
 interface PopularEvisaLinksProps {
   title?: string;
@@ -40,7 +41,7 @@ const PopularEvisaLinks: React.FC<PopularEvisaLinksProps> = ({
       {PRIORITY_EVISA_DESTINATIONS.map((dest) => (
         <li key={dest.code}>
           <Link
-            to={`/visa/${dest.code}`}
+            to={getVisaProductPath(dest.code)}
             className={
               compact
                 ? 'text-gray-600 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 transition-colors text-sm'

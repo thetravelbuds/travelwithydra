@@ -6,7 +6,5 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Country ISO → keyword-slug 301s and the SPA fallback are generated into
+# dist/_redirects by scripts/generate-seo-html.mjs (runs at end of npm run build).

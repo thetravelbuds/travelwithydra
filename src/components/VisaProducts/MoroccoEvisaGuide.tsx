@@ -28,6 +28,42 @@ const MoroccoEvisaGuide: React.FC = () => {
 
   return (
     <div className="mb-8 space-y-8">
+      <motion.section
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl border border-primary-100 bg-primary-50/60 p-6 dark:border-primary-900 dark:bg-primary-950/30"
+      >
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          Morocco eVisa requirements at a glance
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+          The Morocco eVisa is a fully online tourist authorisation for eligible nationalities.
+          Typical conditions: {MOROCCO_EVISA_QUICK_FACTS.entryType.toLowerCase()},{' '}
+          {MOROCCO_EVISA_QUICK_FACTS.lengthOfStay}, and validity of{' '}
+          {MOROCCO_EVISA_QUICK_FACTS.visaValidity}. {MOROCCO_EVISA_QUICK_FACTS.applyBeforeTravel}.
+          Use this page to review documents, travel insurance rules, and apply for your Morocco eVisa
+          online with Hydra.
+        </p>
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2 text-sm text-gray-700 dark:text-gray-300">
+          <li className="flex items-start gap-2">
+            <FaCheckCircle className="mt-0.5 shrink-0 text-primary-600" />
+            <span>Apply online — no embassy appointment for the eVisa route</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <FaCheckCircle className="mt-0.5 shrink-0 text-primary-600" />
+            <span>Passport, photo, accommodation, return ticket, and insurance</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <FaCheckCircle className="mt-0.5 shrink-0 text-primary-600" />
+            <span>Digital approval delivered by email</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <FaCheckCircle className="mt-0.5 shrink-0 text-primary-600" />
+            <span>Print your Morocco eVisa before you travel</span>
+          </li>
+        </ul>
+      </motion.section>
+
       {/* Application process */}
       <motion.section
         initial={{ opacity: 0, y: 16 }}
@@ -37,7 +73,7 @@ const MoroccoEvisaGuide: React.FC = () => {
         <div className="mb-6 flex items-center gap-3">
           <FaRoute className="text-xl text-primary-500" />
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">How to get your Morocco e-Visa</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">How to get your Morocco eVisa</h2>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
               100% online — no embassy visit. {MOROCCO_EVISA_QUICK_FACTS.applyBeforeTravel}.
             </p>

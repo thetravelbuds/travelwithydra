@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ALL_COUNTRIES, getFlagUrl } from '../utils/countries';
 import { generateVisaProductForCountry } from '../utils/visaProductGenerator';
 import { VisaProduct } from '../types/visaProduct';
+import { getVisaProductPath } from '../config/visaSlugs';
 
 const VisaCatalog: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -178,7 +179,7 @@ const VisaCatalog: React.FC = () => {
               {filteredCountries.map((product) => (
                 <Link
                   key={product.countryCode}
-                  to={`/visa/${product.countryCode}`}
+                  to={getVisaProductPath(product.countryCode)}
                   className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-300"
                 >
                   <div className="relative h-40">

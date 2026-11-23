@@ -1,32 +1,26 @@
 /**
- * Generates public/sitemap.xml with priority eVisa pages first.
- * Run before vite build: npm run generate-sitemap
+ * Generates public/sitemap.xml with keyword-rich eVisa URLs for every country.
  */
 import { writeFileSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { VISA_SEO_PAGES } from './seo-meta.mjs';
+import { loadCountries, getVisaProductPath } from './visa-url-utils.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const SITE_URL = 'https://travelwithydra.com';
 
-const PRIORITY_EVISA = [
-  'ma', 'tr', 'my', 'id', 'eg', 'ae', 'vn', 'ke', 'lk', 'sa', 'in', 'au',
-];
-
-const OTHER_EVISA = [
-  'dz', 'az', 'bh', 'bj', 'bt', 'br', 'kh', 'cm', 'cl', 'cn', 'cu', 'et',
-  'ga', 'ge', 'gh', 'gn', 'hk', 'jo', 'la', 'mg', 'mn', 'nz', 'ng', 'pg',
-  'ph', 'ru', 'kr', 'tj', 'tz', 'tg', 'ug', 'gb', 'us', 'uy', 'uz', 'zm',
-];
+const TOP_CODES = new Set(['ma', 'tr']);
+const PRIORITY_CODES = new Set(VISA_SEO_PAGES.map((p) => p.code));
 
 const STATIC_PAGES = [
   { path: '/', priority: '1.0', changefreq: 'weekly' },
   { path: '/visa/browse', priority: '0.9', changefreq: 'weekly' },
-  { path: '/visa-checker', priority: '0.8', changefreq: 'monthly' },
-  { path: '/features', priority: '0.7', changefreq: 'monthly' },
+  { path: '/visa-checker', priority: '0.85', changefreq: 'weekly' },
+  { path: '/features', priority: '0.6', changefreq: 'monthly' },
   { path: '/pricing', priority: '0.7', changefreq: 'monthly' },
-  { path: '/contact', priority: '0.5', changefreq: 'yearly' },
+  { path: '/contact', priority: '0.4', changefreq: 'yearly' },
   { path: '/blogs', priority: '0.6', changefreq: 'weekly' },
 ];
 
@@ -41,13 +35,29 @@ function urlEntry(path, priority, changefreq) {
   </url>`;
 }
 
-const entries = [
-  ...STATIC_PAGES.map((p) => urlEntry(p.path, p.priority, p.changefreq)),
-  ...PRIORITY_EVISA.map((code) => urlEntry(`/visa/${code}`, '0.95', 'weekly')),
-  ...OTHER_EVISA.filter((c) => !PRIORITY_EVISA.includes(c)).map((code) =>
-    urlEntry(`/visa/${code}`, '0.7', 'monthly')
-  ),
-];
+const seen = new Set();
+const entries = [];
+
+function push(path, priority, changefreq) {
+  if (seen.has(path)) return;
+  seen.add(path);
+  entries.push(urlEntry(path, priority, changefreq));
+}
+
+for (const p of STATIC_PAGES) push(p.path, p.priority, p.changefreq);
+
+const countries = loadCountries();
+const sorted = [...countries].sort((a, b) => {
+  const score = (c) => (TOP_CODES.has(c.code) ? 0 : PRIORITY_CODES.has(c.code) ? 1 : 2);
+  return score(a) - score(b) || a.name.localeCompare(b.name);
+});
+
+for (const country of sorted) {
+  const path = getVisaProductPath(country.code, country.name);
+  if (TOP_CODES.has(country.code)) push(path, '1.0', 'daily');
+  else if (PRIORITY_CODES.has(country.code)) push(path, '0.95', 'weekly');
+  else push(path, '0.7', 'monthly');
+}
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

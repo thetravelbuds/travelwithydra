@@ -1,13 +1,26 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import VisaProductPage from '../components/VisaProducts/VisaProductPage';
 import { generateVisaProductForCountry } from '../utils/visaProductGenerator';
 import { ALL_COUNTRIES } from '../utils/countries';
 import { getCountryNameFromCode } from '../lib/api/visaRequirements';
 import type { VisaProduct } from '../types/visaProduct';
 import SeoHead from '../components/seo/SeoHead';
+import VisaBreadcrumbs from '../components/seo/VisaBreadcrumbs';
 import { getVisaPageSeo } from '../config/seo';
-import { buildBreadcrumbJsonLd, buildVisaServiceJsonLd } from '../utils/visaSeoJsonLd';
+import {
+  buildBreadcrumbJsonLd,
+  buildFaqPageJsonLd,
+  buildHowToJsonLd,
+  buildVisaServiceJsonLd,
+} from '../utils/visaSeoJsonLd';
+import { getMoroccoEvisaFaqs, MOROCCO_APPLICATION_STEPS } from '../config/moroccoEvisaContent';
+import { TURKEY_VISA_GUIDE } from '../config/turkeyEvisaContent';
+import {
+  getVisaProductPath,
+  getVisaSlug,
+  resolveVisaCountryCode,
+} from '../config/visaSlugs';
 
 // Cloudinary config from index.js
 const CLOUDINARY_CONFIG = {
@@ -17,16 +30,30 @@ const CLOUDINARY_CONFIG = {
 };
 
 const VisaProduct: React.FC = () => {
-  const { countryCode } = useParams<{ countryCode: string }>();
+  const { countryCode: countryParam } = useParams<{ countryCode: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const countryCode = useMemo(
+    () => resolveVisaCountryCode(countryParam) ?? undefined,
+    [countryParam]
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [productData, setProductData] = useState<VisaProduct | null>(null);
   const [countryName, setCountryName] = useState<string>('');
 
+  // Canonicalize /visa/ma → /visa/morocco-evisa (keeps keyword-rich URLs in the address bar)
+  useEffect(() => {
+    if (!countryParam || !countryCode) return;
+    const canonicalSlug = getVisaSlug(countryCode);
+    if (countryParam.toLowerCase() !== canonicalSlug) {
+      navigate(`${getVisaProductPath(countryCode)}${location.search}`, { replace: true });
+    }
+  }, [countryParam, countryCode, navigate, location.search]);
+
   // Use useCallback to prevent this function from being recreated on every render
   const handleCountryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    navigate(`/visa/${e.target.value}`);
+    navigate(getVisaProductPath(e.target.value));
   }, [navigate]);
 
   // Load visa product data for the selected country
@@ -71,8 +98,13 @@ const VisaProduct: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!countryParam) {
+      setError('Country is required');
+      setLoading(false);
+      return;
+    }
     if (!countryCode) {
-      setError('Country code is required');
+      setError(`Unknown visa destination: ${countryParam}`);
       setLoading(false);
       return;
     }
@@ -90,7 +122,7 @@ const VisaProduct: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [countryCode, loadProductData]);
+  }, [countryParam, countryCode, loadProductData]);
 
   const seo = useMemo(() => {
     if (!countryCode || !countryName) return null;
@@ -99,14 +131,46 @@ const VisaProduct: React.FC = () => {
 
   const jsonLd = useMemo(() => {
     if (!countryCode || !countryName) return undefined;
-    return [
+    const code = countryCode.toLowerCase();
+    const blocks: Record<string, unknown>[] = [
       buildVisaServiceJsonLd(countryCode, countryName),
       buildBreadcrumbJsonLd([
         { name: 'Home', path: '/' },
         { name: 'eVisa Destinations', path: '/visa/browse' },
-        { name: `${countryName} eVisa`, path: `/visa/${countryCode.toLowerCase()}` },
+        { name: `${countryName} eVisa`, path: getVisaProductPath(code) },
       ]),
     ];
+
+    if (code === 'ma') {
+      const faqLd = buildFaqPageJsonLd(getMoroccoEvisaFaqs());
+      if (faqLd) blocks.push(faqLd);
+      blocks.push(
+        buildHowToJsonLd(
+          'Morocco',
+          MOROCCO_APPLICATION_STEPS.map((s) => ({
+            title: s.title,
+            description: s.description,
+          }))
+        )
+      );
+    }
+
+    if (code === 'tr') {
+      const turkeyFaqs = TURKEY_VISA_GUIDE.faqCategories.flatMap((c) => c.items);
+      const faqLd = buildFaqPageJsonLd(turkeyFaqs);
+      if (faqLd) blocks.push(faqLd);
+      blocks.push(
+        buildHowToJsonLd(
+          'Turkey',
+          TURKEY_VISA_GUIDE.applicationSteps.map((s) => ({
+            title: s.title,
+            description: s.description,
+          }))
+        )
+      );
+    }
+
+    return blocks;
   }, [countryCode, countryName]);
 
   if (loading) {
@@ -161,6 +225,9 @@ const VisaProduct: React.FC = () => {
       {/* Country Selector */}
       <div className="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {countryCode && countryName && (
+            <VisaBreadcrumbs countryCode={countryCode} countryName={countryName} />
+          )}
           <div className="flex flex-col sm:flex-row justify-between items-center">
             <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2 sm:mb-0">
               Visa Requirements for {countryName}
